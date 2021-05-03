@@ -12,7 +12,7 @@ mkdir -p ${build_dir}
 cd ${build_dir}
 
 if [ -z ${BX_BAYEUX_INSTALL_DIR} ]; then
-    bayeux_3_4_5_setup
+    bayeux_3_5_0_setup
 fi
 
 rawLtdOpt=

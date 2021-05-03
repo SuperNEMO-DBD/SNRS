@@ -42,12 +42,10 @@ namespace snrs {
 
   protected:
 
-    void _at_construct(const std::string & name_,
-                       const datatools::properties & config_,
+    void _at_construct(const datatools::properties & config_,
                        geomtools::models_col_type * models_ = nullptr) override;
 
-    void _at_destroy(const std::string & name_,
-                     geomtools::models_col_type * models_ = nullptr) override;
+    void _at_destroy(geomtools::models_col_type * models_ = nullptr) override;
 
   public:
     

@@ -87,8 +87,7 @@ namespace snrs {
     return;
   }
 
-  void mesh_pad_model::_at_construct(const std::string & name_,
-                                     const datatools::properties & config_,
+  void mesh_pad_model::_at_construct(const datatools::properties & config_,
                                      geomtools::models_col_type * models_)
   {
     auto logging = get_logging_priority();
@@ -332,8 +331,8 @@ namespace snrs {
     _solid_.set_y(width);
     _solid_.set_z(_pad_.get_height());
     _solid_.lock();
-    DT_THROW_IF(! _solid_.is_valid(), std::logic_error, "Invalid envelope box dimensions in model '" << name_ << "' !");
-    grab_logical().set_name(i_model::make_logical_volume_name(name_));
+    DT_THROW_IF(! _solid_.is_valid(), std::logic_error, "Invalid envelope box dimensions in model '" << get_name() << "' !");
+    grab_logical().set_name(i_model::make_logical_volume_name(get_name()));
     grab_logical().set_shape(_solid_);
     grab_logical().set_material_ref(_material_name_);
 
@@ -341,7 +340,7 @@ namespace snrs {
     std::vector<std::string> exported_properties_prefixes = { "visibility." };
     
     std::string source_model_name
-      = geomtools::i_model::extract_basename_from_model_name(name_)
+      = geomtools::i_model::extract_basename_from_model_name(get_name())
       + ".source"
       + geomtools::i_model::model_suffix();
     _source_model_.set_name(source_model_name);
@@ -361,11 +360,11 @@ namespace snrs {
                          source_placement);
 
     std::string back_film_model_name
-      = geomtools::i_model::extract_basename_from_model_name(name_)
+      = geomtools::i_model::extract_basename_from_model_name(get_name())
       + ".back_film"
       + geomtools::i_model::model_suffix();
     std::string front_film_model_name
-      = geomtools::i_model::extract_basename_from_model_name(name_)
+      = geomtools::i_model::extract_basename_from_model_name(get_name())
       + ".front_film"
       + geomtools::i_model::model_suffix();
     if (_pad_.has_film()) {
@@ -413,36 +412,35 @@ namespace snrs {
     return;
   }
 
-  void mesh_pad_model::_at_destroy(const std::string & name_,
-                                   geomtools::models_col_type * models_)
+  void mesh_pad_model::_at_destroy(geomtools::models_col_type * models_)
   {
     auto logging = get_logging_priority();
     logging = datatools::logger::PRIO_NOTICE;
     DT_LOG_TRACE(logging,  "Entering...");
     std::string source_model_name
-      = geomtools::i_model::extract_basename_from_model_name(name_)
+      = geomtools::i_model::extract_basename_from_model_name(get_name())
       + ".source"
       + geomtools::i_model::model_suffix();
    
     if (_pad_.has_film()) {
       std::string back_film_model_name
-        = geomtools::i_model::extract_basename_from_model_name(name_)
+        = geomtools::i_model::extract_basename_from_model_name(get_name())
         + ".back_film"
         + geomtools::i_model::model_suffix();
       std::string front_film_model_name
-        = geomtools::i_model::extract_basename_from_model_name(name_)
+        = geomtools::i_model::extract_basename_from_model_name(get_name())
         + ".front_film"
         + geomtools::i_model::model_suffix();
-      _back_film_model_.destroy(back_film_model_name, models_);
-      _front_film_model_.destroy(front_film_model_name, models_);
-      DT_LOG_NOTICE(logging, "Unregistering the back film model '" << back_film_model_name << "'...");
+      DT_LOG_NOTICE(logging, "Unregistering the back film model '" << _back_film_model_.get_name() << "'...");
+      DT_LOG_NOTICE(logging, "Unregistering the front film model '" << _front_film_model_.get_name() << "'...");
+      _back_film_model_.destroy(models_);
+      _front_film_model_.destroy(models_);
       models_->erase(back_film_model_name);
-      DT_LOG_NOTICE(logging, "Unregistering the front film model '" << front_film_model_name << "'...");
       models_->erase(front_film_model_name);
     }
     DT_LOG_NOTICE(logging, "Unregistering the source model '" << source_model_name << "'...");
     models_->erase(source_model_name);
-    _source_model_.destroy(source_model_name, models_);
+    _source_model_.destroy(models_);
   
     DT_LOG_TRACE(logging, "Exiting.");
     return;
