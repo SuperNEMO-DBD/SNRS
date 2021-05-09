@@ -7,7 +7,8 @@ SNRS - Extraction of source strips calibrated 3D geometry data from LTD datasets
 
 
 The SNRS package contains some tools to build  calibrated  3D geometry datasets
-from the *laser tracker* raw data.
+from the *laser tracker* raw data described in
+DocDB \#5400.
 
 Programs:
 
@@ -69,7 +70,7 @@ Building calibrated  3D geometry data from LTD datasets
    * Some voxelization data are also stored in the file (voxel size: 1cm x 1cm x 1cm).
 
    
-   **TODO:** process source strips with LAPP layout (8-pads strips).
+   **TODO:** Consider to process source strips with LAPP layout (8-pads strips) is needed.
    
 ..
       .. raw:: pdf

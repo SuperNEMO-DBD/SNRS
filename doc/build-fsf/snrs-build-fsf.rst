@@ -7,7 +7,11 @@ SNRS - Foil Shaping Fit from LTD datasets
 
 
 The SNRS package contains some tools to build a realistic geometry model
-for a given source strip based on a fit of *laser tracker* data.
+for a given source strip based on a fit of *laser tracker* data build from
+the raw LTD dataset (DocDb \#5400).
+
+Preliminary work on strip 32, 33, and 34 (ITEP-like) with 10x100 tiles meshes.
+
 
 Programs:
 
@@ -50,7 +54,8 @@ Building FSF datasets
 
    Description of the generated files (example for strip 34) :
 
-   * ``strip-34-pad-0-shaping.report`` is a CSV formatted ASCII file which contains the result of the fit for the strip (for now, only elliptical fit is available)
+   * ``strip-34-pad-0-shaping.report`` is a CSV formatted ASCII file which contains the result of the fit for the strip
+     (for now, only elliptical fit is available)
    * ``strip-34-pad-0-shaped.dat`` is a ASCII file which contains the data (in a specific format)
      that describe the geometry of the source pad after fitting 
    * ``strip-34-pad-0-tessellated.dat`` is a ASCII file which contains the data (in a specific format known by Bayeux >=3.4.5)
