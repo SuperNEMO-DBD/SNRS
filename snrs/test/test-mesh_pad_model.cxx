@@ -10,6 +10,7 @@
 #include <bayeux/datatools/utils.h>
 #include <bayeux/datatools/units.h>
 #include <bayeux/geomtools/manager.h>
+#include <bayeux/geomtools/mapping.h>
 
 // This project:
 // Ourselves:
@@ -32,8 +33,15 @@ int main()
     geoMgr.initialize(geoMgrConfig);
     geoMgr.tree_dump(std::clog, "The geometry manager : ");
 
+    const geomtools::mapping theMapping = geoMgr.get_mapping();
+    const geomtools::geom_info_dict_type & geom_infos
+      = theMapping.get_geom_infos();
+    for (const auto & ginfo : geom_infos) {
+      std::clog << "Geom info: " << ginfo.first
+                << " : logical='" << ginfo.second.get_logical().get_name() << "' " << '\n';
+    }
+
     
-     
   } catch (std::exception & error) {
     DT_LOG_ERROR(logging, error.what());
     return 1;

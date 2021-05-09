@@ -25,6 +25,8 @@ if(snrs_generate_tests)
   set(snrs_TESTS
     test-sngeom.cxx
     test-mesh_pad_model.cxx
+    test-mesh_pad_vg.cxx
+    test-mesh_pad_vg_mgr.cxx
     )
 
   set(snrs_TEST_ENVIRONMENT

@@ -155,10 +155,14 @@ namespace snrs {
     double max_width = _pad_.get_width();
     DT_LOG_NOTICE(logging, "max_width = " << max_width / CLHEP::mm << " mm");
     const mygsl::min_max & xrange = _pad_.grab_source_mesh().solid.get_bounding_box_x();
-    DT_THROW_IF(xrange.get_width() >= max_depth, std::logic_error,
+    // xrange.tree_dump(std::cerr, "X-range: ", "*************** [debug] ");
+    DT_THROW_IF(xrange.get_width() >= max_depth,
+                std::logic_error,
                 "Mesh is too thick to fit the mother box for strip #" << strip_id << " pad #" << pad_id);
     const mygsl::min_max & yrange = _pad_.grab_source_mesh().solid.get_bounding_box_y();
-    DT_THROW_IF(yrange.get_width() >= max_width, std::logic_error,
+    // yrange.tree_dump(std::cerr, "Y-range: ", "*************** [debug] ");
+    DT_THROW_IF(yrange.get_width() >= max_width,
+                std::logic_error,
                 "Mesh is too large to fit the mother box for strip #" << strip_id << " pad #" << pad_id);
     DT_LOG_NOTICE(logging, "xrange min = " << xrange.get_min() / CLHEP::mm << " mm");
     DT_LOG_NOTICE(logging, "xrange max = " << xrange.get_max() / CLHEP::mm << " mm");
@@ -299,6 +303,7 @@ namespace snrs {
         std::ifstream fFrontFilmMeshFile(pad_front_film_mesh_filename);
         _pad_.grab_front_film_mesh().solid.load(fFrontFilmMeshFile);
         _pad_.grab_front_film_mesh().solid.lock();
+        _pad_.grab_front_film_mesh().solid.tree_dump(std::cerr, "Front film mesh: ", "[debug] ");
       }   
       {
         datatools::fetch_path_with_env(pad_front_film_tiles_filename);
@@ -384,8 +389,8 @@ namespace snrs {
                            back_film_placement);
 
       // Front film:
-      geomtools::placement front_film_placement(_x_shift_, _y_shift_, 0.0,  0.0, 0.0, 0.0);
-       _front_film_model_.set_name(front_film_model_name);
+      geomtools::placement front_film_placement(_x_shift_, _y_shift_, 0.0, 0.0, 0.0, 0.0);
+      _front_film_model_.set_name(front_film_model_name);
       _front_film_model_.set_solid(_pad_.get_front_film_mesh().solid);
       _film_material_name_ = _pad_.get_film_material();
       _front_film_model_.set_material_name(_film_material_name_);

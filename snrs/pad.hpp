@@ -87,6 +87,8 @@ namespace snrs {
       void invalidate();
 
       bool match(int32_t side_, int32_t column_, int32_t row_, int32_t part_) const;
+
+      bool match(const tile_id & other_) const;
   
       bool operator==(const tile_id & tid_) const;
       
@@ -101,6 +103,8 @@ namespace snrs {
       int32_t get_row() const;
  
       int32_t get_part() const;
+      
+      bool from_string(const std::string & repr_);
 
       friend std::ostream & operator<<(std::ostream & out_, const pad::tile_id & tid_);
 

@@ -4,6 +4,9 @@
 // Standard library:
 // #include <fstream>
 
+// Boost:
+#include <boost/algorithm/string.hpp>
+
 // Bayeux:
 #include <bayeux/datatools/utils.h>
 #include <bayeux/geomtools/utils.h>
@@ -56,6 +59,11 @@ namespace snrs {
     return _part_;
   }
 
+  bool pad::tile_id::match(const tile_id & other_) const
+  {
+    return match(other_.get_side(), other_.get_column(), other_.get_row(), other_.get_part());
+  }
+
   bool pad::tile_id::match(int32_t side_, int32_t column_, int32_t row_, int32_t part_) const
   {
     if (_side_ == INVALID_INDEX) return false;
@@ -90,7 +98,38 @@ namespace snrs {
     out_ << '[' << tid_._side_ << ',' << tid_._column_ << ',' << tid_._row_ << ',' << tid_._part_ << ']';
     return out_;
   }
- 
+
+  bool pad::tile_id::from_string(const std::string & repr_)
+  {
+    std::string repr = boost::trim_copy(repr_);
+    // "[a.b.c.d]"
+    std::size_t len = repr.size();
+    if (len < 9) return false;
+    if (repr[0] != '[') return false;
+    if (repr[len - 1] != ']') return false;
+    std::string intRepr = repr.substr(1, len-2);
+    std::vector<std::string> strs;
+    boost::split(strs, intRepr,boost::is_any_of(","));
+    if (strs.size() != 4) {
+      return false;
+    }
+    int32_t ids[4];
+    for (unsigned int i = 0; i < strs.size(); i++) {
+      std::string token = strs[i];
+      boost::trim(token);
+      int32_t id = pad::tile_id::INVALID_INDEX;
+      if (token == "*") {
+        id = pad::tile_id::ANY_INDEX;
+      } else {
+        std::istringstream sstoken(token);
+        sstoken >> id;
+        if (!sstoken) return false;
+      }
+      ids[i] = id;
+    }
+    set(ids[0], ids[1], ids[2], ids[3]);
+    return true;
+  }
  
   bool pad::tile_id::operator==(const tile_id & tid_) const
   {
@@ -795,8 +834,8 @@ namespace snrs {
       if (!in_) {
         DT_THROW(std::runtime_error, "Invalid tilemap format!");
       }
-      tile_map[pad::tile_id(s, s, c, p)] = k;
-      reverse_tile_map[k] = pad::tile_id(s, s, c, p);
+      tile_map[pad::tile_id(s, c, r, p)] = k;
+      reverse_tile_map[k] = pad::tile_id(s, c, r, p);
     }
   }
  

@@ -76,6 +76,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/snrs)
 
 set(snrs_HEADERS
+  snrs/mesh_pad_vg.hpp
   snrs/mesh_pad_model.hpp
   snrs/pad_tessellation.hpp
   snrs/fsfs.hpp
@@ -88,6 +89,7 @@ set(snrs_HEADERS
   snrs/random.hpp
   )
 set(snrs_SOURCES
+  snrs/mesh_pad_vg.cpp
   snrs/mesh_pad_model.cpp
   snrs/pad_tessellation.cpp
   snrs/fsfs.cpp

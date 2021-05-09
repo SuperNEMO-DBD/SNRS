@@ -15,6 +15,9 @@ cat <<EOF
 
 
 EOF
+
+# export SNRS_TESTING_DIR=
+
 bxgeomtools_inspector \
     --logging "debug" \
     ${batchOpt} \

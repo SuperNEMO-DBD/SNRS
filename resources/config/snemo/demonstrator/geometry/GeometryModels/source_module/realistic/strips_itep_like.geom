@@ -1,16 +1,17 @@
 # -*- mode: conf-unix; -*-
 # Author : F.Mauger
-# Date   : April 2021
+# Date   : May 2021
 # Realistic geometry model of (LAPP-)ITEP source strips 
 
  
 ###################################################################
 #
-# This model generates automatically the "snemo_strip_32_realistic.source.model"
+# This model represents the SuperNEMO strip 32 pad 0 realistic geometry
+#
 # model and its associated logical volume as well as the
 # "snemo_strip_32_realistic.back_film.model" and "snemo_strip_32_realistic.front_film.model" models.
 # 
-[name="snemo_strip_32_realistic.model" type="snrs::mesh_pad_model"]
+[name="snemo_strip_32_pad.realistic.model" type="snrs::mesh_pad_model"]
 
 #@config Strip 32 model
 
@@ -34,18 +35,18 @@ front_film.visibility.hidden : boolean = true
 front_film.visibility.color  : string = "cyan"
 
 # Mapping the daughter volumes :
-mapping.daughter_id.back_film   : string = "[source_strip_film:film=0]"
-mapping.daughter_id.source      : string = "[source_pad:pad=0]"
-mapping.daughter_id.front_film  : string = "[source_strip_film:film=1]"
+mapping.daughter_id.back_film   : string = "[source_pad_film:film=0]"
+mapping.daughter_id.source      : string = "[source_pad_bulk]"
+mapping.daughter_id.front_film  : string = "[source_pad_film:film=1]"
 
- 
 ###################################################################
 #
-# This model generates automatically the "snemo_strip_33_realistic.source.model"
+# This model represents the SuperNEMO strip 33 pad 0 realistic geometry
+#
 # model and its associated logical volume as well as the
 # "snemo_strip_33_realistic.back_film.model" and "snemo_strip_33_realistic.front_film.model" models.
 # 
-[name="snemo_strip_33_realistic.model" type="snrs::mesh_pad_model"]
+[name="snemo_strip_33_pad.realistic.model" type="snrs::mesh_pad_model"]
 
 #@config Strip 33 model
 
@@ -63,18 +64,19 @@ front_film.visibility.hidden : boolean = true
 front_film.visibility.color  : string = "cyan"
 
 # Mapping the daughter volumes :
-mapping.daughter_id.back_film   : string = "[source_strip_film:film=0]"
-mapping.daughter_id.source      : string = "[source_pad:pad=0]"
-mapping.daughter_id.front_film  : string = "[source_strip_film:film=1]"
+mapping.daughter_id.back_film   : string = "[source_pad_film:film=0]"
+mapping.daughter_id.source      : string = "[source_pad_bulk]"
+mapping.daughter_id.front_film  : string = "[source_pad_film:film=1]"
 
 
 ###################################################################
 #
-# This model generates automatically the "snemo_strip_34_realistic.source.model"
+# This model represents the SuperNEMO strip 34 pad 0 realistic geometry
+#
 # model and its associated logical volume as well as the
 # "snemo_strip_34_realistic.back_film.model" and "snemo_strip_34_realistic.front_film.model" models.
 # 
-[name="snemo_strip_34_realistic.model" type="snrs::mesh_pad_model"]
+[name="snemo_strip_34_pad.realistic.model" type="snrs::mesh_pad_model"]
 
 #@config Strip 34 model (LAPP-ITEP-4)
 
@@ -82,7 +84,7 @@ mapping.daughter_id.front_film  : string = "[source_strip_film:film=1]"
 strip_id : integer = 34
 
 # #@description Depth of the gas volume around the source strip (along the X-axis)
-# depth : real as length = 52 mm
+# depth : real as length = 58 mm
 
 # pad.load_file             : string as path = "@snrs:data/geometry/source_foils/fsf/strip-34-pad-0-shaped.dat"
 # pad.source.load_mesh      : string as path = "@snrs:data/geometry/source_foils/fsf/strip-34-pad-0-tessellated.dat"
@@ -103,8 +105,53 @@ back_film.visibility.color  : string = "cyan"
 front_film.visibility.color : string = "cyan"
 
 # Mapping the daughter volumes :
-mapping.daughter_id.back_film   : string = "[source_strip_film:film=0]"
-mapping.daughter_id.source      : string = "[source_pad:pad=0]"
-mapping.daughter_id.front_film  : string = "[source_strip_film:film=1]"
+mapping.daughter_id.back_film   : string = "[source_pad_film:film=0]"
+mapping.daughter_id.source      : string = "[source_pad_bulk]"
+mapping.daughter_id.front_film  : string = "[source_pad_film:film=1]"
+
+ 
+###################################################################
+#
+# This model represents the realistic layout of the strip 32
+# 
+[name="snemo_strip_32.realistic.model" type="geomtools::stacked_model"]
+stacked.axis            : string = "x"
+stacked.number_of_items : integer = 1
+stacked.model_0  : string = "snemo_strip_32_pad.realistic.model"
+stacked.label_0  : string = "pad_bundle_0"
+material.ref     : string = "tracking_gas"
+visibility.color : string = "green"
+# Mapping the source foil from its parent category :
+mapping.daughter_id.pad_bundle_0 : string = "[source_pad:pad=0]"
+
+ 
+###################################################################
+#
+# This model represents the realistic layout of the strip 33
+# 
+[name="snemo_strip_33.realistic.model" type="geomtools::stacked_model"]
+stacked.axis            : string = "x"
+stacked.number_of_items : integer = 1
+stacked.model_0  : string = "snemo_strip_33_pad.realistic.model"
+stacked.label_0  : string = "pad_bundle_0"
+material.ref     : string = "tracking_gas"
+visibility.color : string = "green"
+# Mapping the source foil from its parent category :
+mapping.daughter_id.pad_bundle_0 : string = "[source_pad:pad=0]"
+
+ 
+###################################################################
+#
+# This model represents the realistic layout of the strip 34
+# 
+[name="snemo_strip_34.realistic.model" type="geomtools::stacked_model"]
+stacked.axis            : string = "x"
+stacked.number_of_items : integer = 1
+stacked.model_0  : string = "snemo_strip_34_pad.realistic.model"
+stacked.label_0  : string = "pad_bundle_0"
+material.ref     : string = "tracking_gas"
+visibility.color : string = "green"
+# Mapping the source foil from its parent category :
+mapping.daughter_id.pad_bundle_0 : string = "[source_pad:pad=0]"
 
 # end
