@@ -2,9 +2,10 @@ message(STATUS "Building LTD documentation")
 
 add_custom_command(OUTPUT snrs-build-ltd.pdf
   # COMMAND test -L ${CMAKE_CURRENT_SOURCE_DIR}/images && rm -f ${CMAKE_CURRENT_SOURCE_DIR}/images
-  COMMAND ln -s ${SNRS_DATA_DIR}/geometry/source_foils/ltd/images ${CMAKE_CURRENT_SOURCE_DIR}/images
+  COMMAND rm -f ${CMAKE_CURRENT_SOURCE_DIR}/tmpimg
+  COMMAND ln -s ${SNRS_DATA_DIR}/geometry/source_foils/ltd/images ${CMAKE_CURRENT_SOURCE_DIR}/tmpimg
   COMMAND make snrs-build-ltd.pdf
-  COMMAND rm -f ${CMAKE_CURRENT_SOURCE_DIR}/images
+  COMMAND rm -f ${CMAKE_CURRENT_SOURCE_DIR}/tmpimg
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/snrs-build-ltd.rst
   VERBATIM
