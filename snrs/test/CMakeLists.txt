@@ -23,6 +23,7 @@
 if(snrs_generate_tests)
 
   set(snrs_TESTS
+    test-snrs.cxx
     test-sngeom.cxx
     test-mesh_pad_model.cxx
     test-mesh_pad_vg.cxx

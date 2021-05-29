@@ -6,31 +6,46 @@
 // This project:
 #include <snrs/config.hpp>
 
-class InitFini
-{
-public:
-  
-  InitFini()
+namespace snrs {
+ 
+  class InitFini
   {
-    bayeux::initialize();
-    datatools::kernel & k = datatools::kernel::instance();
-    datatools::library_info & kLibInfo = k.grab_library_info_register();
-    auto libInfoData = kLibInfo.registration("snrs",
-                                             "The SNRS library",
-                                             SNRS_VERSION,
-                                             "",
-                                             "",
-                                             SNRS_RESOURCE_PATH);
-    libInfoData.store(datatools::library_info::keys::env_resource_dir(),
-                      "SNRS_RESOURCE_PATH");
-    libInfoData.print_tree(std::cerr);
-  }
+  public:
   
-  ~InitFini()
-  {
-    bayeux::terminate();
-  }
+    InitFini()
+    {
+      if (not bayeux::is_initialized()) {
+        bayeux::initialize();
+        _bxinit_ = true;
+      }
+      datatools::kernel & k = datatools::kernel::instance();
+      datatools::library_info & kLibInfo = k.grab_library_info_register();
+      datatools::properties & libInfoData = kLibInfo.registration("snrs",
+                                                                  "The SNRS library",
+                                                                  SNRS_VERSION,
+                                                                  "",
+                                                                  "",
+                                                                  SNRS_RESOURCE_PATH);
+      libInfoData.store(datatools::library_info::keys::env_resource_dir(),
+                        "SNRS_RESOURCE_PATH");
+      libInfoData.store("truc", "foo");
+      // std::cerr << "Library info :\n";
+      // libInfoData.print_tree(std::cerr);
+    }
   
-};
+    ~InitFini()
+    {
+      if (_bxinit_) {
+        bayeux::terminate();
+      }
+    }
 
-InitFini initFini;
+    bool _bxinit_ = false;
+  
+  };
+
+} // namespace snrs
+
+namespace { 
+  snrs::InitFini _snrsInitFini;
+}

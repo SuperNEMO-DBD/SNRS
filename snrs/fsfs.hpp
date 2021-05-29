@@ -10,6 +10,7 @@
 #include <bayeux/datatools/logger.h>
 #include <bayeux/mygsl/multidimensional_minimization.h>
 #include <bayeux/mygsl/multiparameter_system.h>
+#include <bayeux/mygsl/tabulated_function.h>
 
 // This project:
 #include <snrs/ltd.hpp>
@@ -68,7 +69,10 @@ namespace snrs {
 
     struct fit_config_type
     {
+      int      strip_id = -1;
+      int      pad_id = -1;
       uint32_t max_iter       = 3000;
+      bool     success_on_max_iter = true;
       int      modulo_iter    = 10;
       double   epsabs         = 1.0;
       double   zband_width    = 1.0 * CLHEP::mm;
@@ -80,6 +84,8 @@ namespace snrs {
       double   sigma_x        = 0.5 * CLHEP::mm;
       bool     fixed_y0       = false;
       double   safe_film_gap  = 2.0 * CLHEP::micrometer;
+      int      shaping_mode   = 3;
+      double   smooth_width   = 4.0; // 5.0;
       void print(std::ostream & out_) const;
     };
 
@@ -107,7 +113,15 @@ namespace snrs {
 
     const fit_config_type & get_fit_config() const;
 
-    void shape_pad(pad & pad_) const;
+    void smooth_elliptic_zfits();
+    
+    bool shape_pad(pad & pad_) const;
+
+    void shape_pad1(pad & pad_) const;
+
+    void shape_pad2(pad & pad_) const;
+
+    void shape_pad_elliptic_1(pad & pad_) const;
   
   private:
 
@@ -120,16 +134,19 @@ namespace snrs {
   public:
 
     datatools::logger::priority logging = datatools::logger::PRIO_NOTICE;  
- 
+    
   private:
 
     fit_config_type _fit_config_;
+    mygsl::tabulated_function _stripLeftEdgeTF_;    
     pad *       _pad_ = nullptr;       ///< Working pad
     const sngeom * _geom_ = nullptr;   ///< Geometry description
     const ltd * _ltd_data_ = nullptr;  ///< Input LTC data
     std::vector<ltd_zband> _zbands_;
     std::vector<zfit_context_type> _zfits_;
-  
+    std::vector<double> _zTabLtdYmin_;
+    std::vector<double> _zTabLtdYmax_;
+
   };
 
   struct fsfs_sys;

@@ -122,14 +122,15 @@ namespace snrs {
     {
       datatools::fetch_path_with_env(pad_load_filename);
       std::ifstream fpad(pad_load_filename);
+      DT_THROW_IF(!fpad, std::logic_error, "Cannot open file '" << pad_load_filename << "'!");
       DT_LOG_NOTICE(logging, "Loading pad from '" << pad_load_filename << "'...");
       _pad_.load(fpad);
     }
     if (_pad_.get_strip_id() != strip_id) {
-      DT_LOG_NOTICE(logging, "Requested strip ID=" << strip_id << " and strip ID form file do not match!");
+      DT_LOG_NOTICE(logging, "Requested strip ID=" << strip_id << " and strip ID="  << _pad_.get_strip_id() << " from file do not match!");
     }
     if (_pad_.get_pad_id() != pad_id) {
-      DT_LOG_NOTICE(logging, "Requested pad ID=" << pad_id << " and pad ID form file do not match!");
+      DT_LOG_NOTICE(logging, "Requested pad ID=" << pad_id << " and pad ID="  << _pad_.get_pad_id() << " from file do not match!");
     }
     DT_LOG_NOTICE(logging, "Pad :");
     _pad_.print(std::clog);
@@ -139,6 +140,7 @@ namespace snrs {
     {
       datatools::fetch_path_with_env(pad_source_mesh_filename);
       std::ifstream fSourceMeshFile(pad_source_mesh_filename);
+      DT_THROW_IF(!fSourceMeshFile, std::logic_error, "Cannot open file '" << pad_source_mesh_filename << "'!");
       _pad_.grab_source_mesh().solid.load(fSourceMeshFile);
       _pad_.grab_source_mesh().solid.lock();
       DT_THROW_IF(not _pad_.grab_source_mesh().solid.is_locked(),
@@ -148,6 +150,7 @@ namespace snrs {
     {
       datatools::fetch_path_with_env(pad_source_tiles_filename);
       std::ifstream fSourceTilesFile(pad_source_tiles_filename);
+      DT_THROW_IF(!fSourceTilesFile, std::logic_error, "Cannot open file '" << pad_source_tiles_filename << "'!");
       _pad_.grab_source_mesh().load_tile_maps(fSourceTilesFile);
     }
     double max_depth = 58.0 * CLHEP::mm;
@@ -156,11 +159,13 @@ namespace snrs {
     DT_LOG_NOTICE(logging, "max_width = " << max_width / CLHEP::mm << " mm");
     const mygsl::min_max & xrange = _pad_.grab_source_mesh().solid.get_bounding_box_x();
     // xrange.tree_dump(std::cerr, "X-range: ", "*************** [debug] ");
+    DT_LOG_NOTICE(logging, "mesh X depth = " << xrange.get_width() / CLHEP::mm << " mm");
     DT_THROW_IF(xrange.get_width() >= max_depth,
                 std::logic_error,
                 "Mesh is too thick to fit the mother box for strip #" << strip_id << " pad #" << pad_id);
     const mygsl::min_max & yrange = _pad_.grab_source_mesh().solid.get_bounding_box_y();
     // yrange.tree_dump(std::cerr, "Y-range: ", "*************** [debug] ");
+    DT_LOG_NOTICE(logging, "mesh Y width = " << yrange.get_width() / CLHEP::mm << " mm");
     DT_THROW_IF(yrange.get_width() >= max_width,
                 std::logic_error,
                 "Mesh is too large to fit the mother box for strip #" << strip_id << " pad #" << pad_id);
@@ -290,17 +295,20 @@ namespace snrs {
       {
         datatools::fetch_path_with_env(pad_back_film_mesh_filename);
         std::ifstream fBackFilmMeshFile(pad_back_film_mesh_filename);
+        DT_THROW_IF(!fBackFilmMeshFile, std::logic_error, "Cannot open file '" << pad_back_film_mesh_filename << "'!");
         _pad_.grab_back_film_mesh().solid.load(fBackFilmMeshFile);
         _pad_.grab_back_film_mesh().solid.lock();
       }  
       {
         datatools::fetch_path_with_env(pad_back_film_tiles_filename);
         std::ifstream fBackFilmTilesFile(pad_back_film_tiles_filename);
+        DT_THROW_IF(!fBackFilmTilesFile, std::logic_error, "Cannot open file '" << pad_back_film_tiles_filename << "'!");
         _pad_.grab_back_film_mesh().load_tile_maps(fBackFilmTilesFile);
       }
       {
         datatools::fetch_path_with_env(pad_front_film_mesh_filename);
         std::ifstream fFrontFilmMeshFile(pad_front_film_mesh_filename);
+        DT_THROW_IF(!fFrontFilmMeshFile, std::logic_error, "Cannot open file '" << pad_front_film_mesh_filename << "'!");
         _pad_.grab_front_film_mesh().solid.load(fFrontFilmMeshFile);
         _pad_.grab_front_film_mesh().solid.lock();
         _pad_.grab_front_film_mesh().solid.tree_dump(std::cerr, "Front film mesh: ", "[debug] ");
@@ -308,6 +316,7 @@ namespace snrs {
       {
         datatools::fetch_path_with_env(pad_front_film_tiles_filename);
         std::ifstream fFrontFilmTilesFile(pad_front_film_tiles_filename);
+        DT_THROW_IF(!fFrontFilmTilesFile, std::logic_error, "Cannot open file '" << pad_front_film_tiles_filename << "'!");
         _pad_.grab_front_film_mesh().load_tile_maps(fFrontFilmTilesFile);
       }
     }

@@ -61,9 +61,9 @@ namespace snrs {
     uint32_t nx = 2; 
     uint32_t ny = _pad_.get_ny(); 
     uint32_t nz = _pad_.get_nz();
-    DT_LOG_NOTICE(logging, "yref = " << yref / CLHEP::mm << " mm");
-    DT_LOG_NOTICE(logging, "Ny = " << ny);
-    DT_LOG_NOTICE(logging, "Nz = " << nz);
+    DT_LOG_DEBUG(logging, "yref = " << yref / CLHEP::mm << " mm");
+    DT_LOG_DEBUG(logging, "Ny = " << ny);
+    DT_LOG_DEBUG(logging, "Nz = " << nz);
     for (int i = pad::FACE_BACK; i <= pad::FACE_FRONT; i++) {
       for(uint32_t j = 0; j <= ny; j++) {
         for(uint32_t k = 0; k <= nz; k++) {
@@ -77,10 +77,9 @@ namespace snrs {
           } else if (target_ == PAD_TARGET_FRONT_FILM) {
             vijk = &_pad_.get_front_film_vertex(vid);
           }
-          DT_LOG_NOTICE(logging, "======>  vijk.pos = " << vijk->pos  / CLHEP::mm << " mm");
-          // geomtools::vector_3d vpos(vijk->pos - _origin_);
+          DT_LOG_DEBUG(logging, "======>  vijk.pos = " << vijk->pos  / CLHEP::mm << " mm");
           geomtools::vector_3d vpos(vijk->pos);
-          DT_LOG_NOTICE(logging, "======>  vpos = " << vpos / CLHEP::mm << " mm");
+          DT_LOG_DEBUG(logging, "======>  vpos = " << vpos / CLHEP::mm << " mm");
           mesh_.solid.add_vertex(vindex, vpos.x(), vpos.y(), vpos.z());
         }
       }
