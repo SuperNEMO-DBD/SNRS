@@ -5,7 +5,7 @@ SNRS - SuperNEMO Realistic Sources modeling package
 :author: F.Mauger
 :date: 2021-04-11
 
-.. image:: doc/build-fsf/permImages/test-strip-mesh-32-33-34-3d.png
+.. image:: doc/slides_2021-05-10/images/test_realistic_foils_setup_3.png
    :width: 40%
 	  
 
