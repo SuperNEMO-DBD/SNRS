@@ -33,7 +33,7 @@ endif(SNRS_ENABLE_TESTING)
 
 ###########################################
 # - Datasets:
-option(SNRS_GENERATE_DATA "Generate datasets at installation" OFF)
+option(SNRS_GENERATE_DATA "Generate datasets at build" OFF)
 set(snrs_generate_data 0)
 set(snrs_generate_data_with_plots 0)
 if (SNRS_GENERATE_DATA)
@@ -80,6 +80,7 @@ set(snrs_HEADERS
   snrs/mesh_pad_model.hpp
   snrs/pad_tessellation.hpp
   snrs/fsfs.hpp
+  snrs/array_smoother.hpp
   snrs/sngeom.hpp
   snrs/ltd.hpp
   snrs/pad.hpp
@@ -87,12 +88,14 @@ set(snrs_HEADERS
   snrs/vertex3d.hpp
   snrs/vertex3d_id.hpp
   snrs/random.hpp
+  snrs/snrs.hpp
   )
 set(snrs_SOURCES
   snrs/mesh_pad_vg.cpp
   snrs/mesh_pad_model.cpp
   snrs/pad_tessellation.cpp
   snrs/fsfs.cpp
+  snrs/array_smoother.cpp
   snrs/sngeom.cpp
   snrs/ltd.cpp
   snrs/pad.cpp
@@ -100,6 +103,7 @@ set(snrs_SOURCES
   snrs/vertex3d.cpp
   snrs/vertex3d_id.cpp
   snrs/initfini.cpp
+  snrs/snrs.cpp
   )
 
 add_library(snrs SHARED 
@@ -126,8 +130,6 @@ install(FILES
   ${snrs_HEADERS}
   TYPE INCLUDE
   )
-
-###########################################
 
 ###########################################
 # - Programs:
@@ -214,24 +216,31 @@ if(snrs_generate_data EQUAL 1)
     message( STATUS "RAW_LTD_DATA_DIR is not set... trying to guess...")
     set(RAW_LTD_DATA_DIR "$ENV{RAW_LTD_DATA_DIR}")
     if ("${RAW_LTD_DATA_DIR}" STREQUAL "")
-      message( FATAL "The 'RAW_LTD_DATA_DIR' environment variable is not set")
-      message( FATAL "Please set 'RAW_LTD_DATA_DIR' CMake variable at configure step")
-      message( FATAL "(ex: 'cmake ... -DRAW_LTD_DATA_DIR:PATH=/path/to/SNLTD_3D_measurements ...')")
-      message( FATAL "or provide the 'RAW_LTD_DATA_DIR' environment variable!")
-      message( FATAL "(ex: 'export RAW_LTD_DATA_DIR=\"/path/to/SNLTD_3D_measurements\")")
+      message( SEND_ERROR "The 'RAW_LTD_DATA_DIR' environment variable is not set")
+      message( SEND_ERROR "Please set 'RAW_LTD_DATA_DIR' CMake variable at configure step")
+      message( SEND_ERROR "(ex: 'cmake ... -DRAW_LTD_DATA_DIR:PATH=/path/to/SNLTD_3D_measurements ...')")
+      message( SEND_ERROR "or provide the 'RAW_LTD_DATA_DIR' environment variable!")
+      message( SEND_ERROR "(ex: 'export RAW_LTD_DATA_DIR=\"/path/to/SNLTD_3D_measurements\")")
+      message( FATAL_ERROR "Abort.")
     else()
       message( STATUS "Found the 'RAW_LTD_DATA_DIR' environment variable set at '${RAW_LTD_DATA_DIR}'")
     endif()
   endif()
   message( STATUS "Using RAW_LTD_DATA_DIR='${RAW_LTD_DATA_DIR}'")
   set(SNRS_DATA_DIR "${CMAKE_BINARY_DIR}/snrs_data" )
+  message( STATUS "Using SNRS_DATA_DIR='${SNRS_DATA_DIR}'")
   
   add_custom_command(OUTPUT ${SNRS_DATA_DIR}/geometry/source_foils/ltd/processed-strips.lis
-    COMMAND "${CMAKE_SOURCE_DIR}/scripts/build-ltd.bash" ARGS "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--raw-ltd-dir" "${RAW_LTD_DATA_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
-    COMMENT "Build the SNRS Laser Tracker datasets (LTS) associated to individual strips"
+    COMMAND "${CMAKE_SOURCE_DIR}/scripts/build-ltd.bash"
+    ARGS "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--raw-ltd-dir" "${RAW_LTD_DATA_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
+    COMMENT "Build the SNRS Laser Tracker datasets (LTD) associated to individual strips"
     DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-ltd.bash ${CMAKE_SOURCE_DIR}/scripts/plot_ltd_strip.gp 
     VERBATIM)
 
+  # add_custom_command(OUTPUT ${SNRS_DATA_DIR}/geometry/source_foils/ltd/processed-strips.lis
+  #   COMMAND "touch" ARGS ${SNRS_DATA_DIR}/geometry/source_foils/ltd/processed-strips.lis
+  #   VERBATIM)
+    
   add_custom_target(snrsBuildLtdDataset ALL
     DEPENDS ${SNRS_DATA_DIR}/geometry/source_foils/ltd/processed-strips.lis
     COMMENT "Build the LTD dataset"
@@ -253,22 +262,47 @@ if(snrs_generate_data EQUAL 1)
   #   )
 
   # Generate FSF datasets:
-  add_custom_command(OUTPUT ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
-    COMMAND "${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash" ARGS "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
-    COMMENT "Build the SNRS Foil Shaping Fit (FSF) datasets associated to individual strips"
-    DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash ${CMAKE_SOURCE_DIR}/scripts/plot_fsf_strip.gp
-    VERBATIM)
+  # add_custom_command(OUTPUT ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
+  #   COMMAND "${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash"
+  #   ARGS "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
+  #   COMMENT "Build the SNRS Foil Shaping Fit (FSF) datasets associated to individual strips"
+  #   DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash ${CMAKE_SOURCE_DIR}/scripts/plot_fsf_strip.gp
+  #   VERBATIM)
+
+  # add_custom_target(snrsBuildFsfDataset ALL
+  #   DEPENDS ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
+  #   COMMENT "Build the FSF dataset"
+  #   VERBATIM
+  #   )
 
   add_custom_target(snrsBuildFsfDataset ALL
-    DEPENDS ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
-    COMMENT "Build the FSF dataset"
+    "${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash"
+    "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" "${_plotOption}"
+    DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash ${CMAKE_SOURCE_DIR}/scripts/plot_fsf_strip.gp
+    BYPRODUCTS ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
+    COMMENT "Build the SNRS Foil Shaping Fit (FSF) datasets associated to individual strips"
     VERBATIM
     )
 
-  add_dependencies(snrsBuildFsfDataset snrsBuildLtdDataset snrs-build-fsf)
+  add_dependencies(snrsBuildFsfDataset snrsBuildLtdDataset snrs-build-fsf) 
 
   message(STATUS "CMAKE_INSTALL_DATADIR='${CMAKE_INSTALL_DATADIR}'")
   message(STATUS "Resource installation dir='${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources'")
+
+  add_custom_target(snrsSetFsfDataset 
+    cp
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-shaped.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tiles.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tiles-back-film.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tiles-front-film.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tessellated.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tessellated-back-film.dat
+    ${SNRS_DATA_DIR}/geometry/source_foils/fsf/strip-*-pad-0-tessellated-front-film.dat
+    ${PROJECT_SOURCE_DIR}/resources/data/geometry/source_foils/fsf/
+    )
+
+  add_dependencies(snrsSetFsfDataset snrsBuildFsfDataset) 
+  
   install(DIRECTORY ${SNRS_DATA_DIR}/geometry/source_foils/fsf
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources/data/geometry/source_foils
     FILES_MATCHING
@@ -282,18 +316,27 @@ if(snrs_generate_data EQUAL 1)
     PATTERN "strip-*-pad-?-tiles-back-film.dat"
     PATTERN "strip-*-pad-?-tiles-front-film.dat"
     )
-
-  # install(DIRECTORY ${SNRS_DATA_DIR}/geometry/source_foils/fsf/images
-  #   DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources/data/geometry/source_foils/fsf
-  #   FILES_MATCHING PATTERN "*.png"
-  #   )
-  
+ 
 endif()
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources/data/geometry/source_foils/fsf
-  FILES_MATCHING PATTERN "*.png"
+ 
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/resources/data/geometry/source_foils/fsf
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources/data/geometry/source_foils
+  FILES_MATCHING
+  # PATTERN "processed-strips.lis"
+  PATTERN "strip-*-pad-?-shaped.dat"
+  # PATTERN "strip-*-pad-?-shaping.report"
+  PATTERN "strip-*-pad-?-tiles.dat"
+  PATTERN "strip-*-pad-?-tiles-back-film.dat"
+  PATTERN "strip-*-pad-?-tiles-front-film.dat"
+  PATTERN "strip-*-pad-?-tessellated.dat"
+  PATTERN "strip-*-pad-?-tessellated-back-film.dat"
+  PATTERN "strip-*-pad-?-tessellated-front-film.dat"
   )
+
+# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources
+#   DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/SNRS/resources/data/geometry/source_foils/fsf
+#   FILES_MATCHING PATTERN "*.png"
+#   )
  
 ###########################################
 # - Documentation generation:
