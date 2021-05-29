@@ -3,7 +3,7 @@ SNRS - SuperNEMO Realistic Sources modeling package
 ==================================================================
 
 :author: F.Mauger
-:date: 2021-04-11
+:date: 2021-05-30
 
 .. image:: doc/slides_2021-05-10/images/test_realistic_foils_setup_3.png
    :width: 40%
