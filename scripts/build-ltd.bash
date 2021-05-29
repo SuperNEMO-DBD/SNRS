@@ -4,7 +4,7 @@ srcDir=
 buildDir=
 rawLtdDir=
 snrsDataDir=
-doPlot=false
+doPlot=true
 
 function app_exit()
 {
@@ -45,6 +45,7 @@ snrsConfigExe=$(which snrs-config)
 if [ -n "${snrsConfigExe}" ]; then
     snrsBuildLtdExe="$(which snrs-build-ltd)"
     snrsLtdPlotScript="$(snrs-config --scriptdir)/plot_ltd_strip.gp"
+    snrsMacroDir="$(snrs-config --scriptdir)"
 else
     if [ -z ${srcDir} ]; then
 	app_exit 1 "Missing source directory '--source-dir path'!"
@@ -54,7 +55,11 @@ else
     fi
     snrsBuildLtdExe="${buildDir}/snrs-build-ltd"
     snrsLtdPlotScript="${srcDir}/scripts/plot_ltd_strip.gp"
+    snrsMacroDir="${srcDir}/scripts"
 fi
+echo >&2 "[info] snrsBuildFsfExe='${snrsBuildFsfExe}'"
+echo >&2 "[info] snrsLtdPlotScript='${snrsLtdPlotScript}'"
+echo >&2 "[info] snrsMacroDir='${snrsMacroDir}'"
 
 # snrsBuildLtdExe=$(which snrs-build-ltd)
 # if [ -z '${snrsBuildLtdExe}' ]; then
@@ -124,27 +129,39 @@ plotOpt=
 if [ ${doPlot} = true ]; then
     plotOpt="--plot"
 fi
-if [ -f "${snrsLtdDir}/processed-strips.lis" ]; then
-    rm -f "${snrsLtdDir}/processed-strips.lis"
-fi
+# if [ -f "${snrsLtdDir}/processed-strips.lis" ]; then
+#     rm -f "${snrsLtdDir}/processed-strips.lis"
+# fi
 touch "${snrsLtdDir}/processed-strips.lis"
-
 for stripId in ${itepLists} ; do
-    echo >&2 "[info] Processing raw LTD data for ITEP-like strip ${stripId}..."
-    ${snrsBuildLtdExe} \
-	       --verbosity "notice" \
-	       --strip-id ${stripId} \
-	       --raw-ltd-directory ${rawLtdDir} \
-	       --output-ltd-directory ${snrsLtdDir}	\
-	       ${plotOpt} \
-	       --test-reload
-    if [ $? -ne 0 ]; then
-	app_exit 1 "Failed to run `basename ${snrsBuildLtdExe}` for strip ${stripId}!"
-    else
-	echo "${stripId}" >> "${snrsLtdDir}/processed-strips.lis"
-	if [ ${doPlot} = true ]; then
-	    echo -e "\n\n" | gnuplot -e "stripId=${stripId}" -e "ltdDir='${snrsLtdDir}'" ${snrsLtdPlotScript}
+    processStrip=true
+    grep ^${stripId} ${snrsLtdDir}/processed-strips.lis
+    if [ $? -eq 0 ]; then
+	echo >&2 "[info] LTD data for ITEP-like strip ${stripId} already exist."
+	processStrip=false
+    fi
+    if [ ${processStrip} = true ]; then
+	echo >&2 "[info] Processing raw LTD data for ITEP-like strip ${stripId}..."
+	${snrsBuildLtdExe} \
+	    --verbosity "notice" \
+	    --strip-id ${stripId} \
+	    --raw-ltd-directory ${rawLtdDir} \
+	    --output-ltd-directory ${snrsLtdDir}	\
+	    ${plotOpt} \
+	    --test-reload
+	processingStatus=$?
+	if [ $processingStatus -ne 0 ]; then
+	    app_exit 1 "Failed to run `basename ${snrsBuildLtdExe}` for strip ${stripId}!"
 	fi
+	echo "${stripId}" >> "${snrsLtdDir}/processed-strips.lis"
+    fi
+    if [ ${doPlot} = true ]; then
+	echo >&2 "[info] Generating LTD plots for strip ${stripId}..."
+	echo -e "\n\n" | gnuplot -e "stripId=${stripId}" \
+				 -e "macroDir='${snrsMacroDir}'" \
+				 -e "ltdDir='${snrsLtdDir}'" ${snrsLtdPlotScript}
+    else
+	echo >&2 "[info] Do not generate LTD plots for strip ${stripId}."
     fi
 done
 tree ${snrsDataDir}/geometry/source_foils/ltd/
