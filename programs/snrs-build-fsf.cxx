@@ -37,8 +37,8 @@ struct app_config_type
   uint32_t    padId   = DEFAULT_PAD_ID;
   std::string ltdDir;
   std::string fsfDir;
-  bool        doPlot = false;
-  bool        doTestReload= false;  
+  bool        doPlot       = false;
+  bool        doTestReload = false;  
   double      padThickness = -1.0 * CLHEP::mm; // For debug purpose only
   uint32_t    padNy = 20;
   uint32_t    padNz = 200;
@@ -46,13 +46,14 @@ struct app_config_type
   bool        noPolynomial2 = true;
   bool        noPolynomial3 = true;
   bool        noPolynomial4 = true;
-  bool        fixedY0 = false;
-  double      fitEpsAbs = 1.0;
+  bool        fixedY0    = false;
+  double      fitEpsAbs  = 1.0;
   double      zbandWidth = 1.5 * CLHEP::mm;
-  double      yEdgeSafe = 10.0 * CLHEP::mm;
+  double      yEdgeSafe  = 10.0 * CLHEP::mm;
   double      sigmaX = 0.5 * CLHEP::mm;
-  int         kzMin = -1;
-  int         kzMax = -1;
+  int         kzMin  = -1;
+  int         kzMax  = -1;
+  int         shapingMode = 3;
   bool        doDisplay = false;
   
   app_config_type() = default;
@@ -75,6 +76,7 @@ int main(int argc_, char * argv_[])
 
   try {
     std::string verbosityLabel;
+    std::string shapingModeLabel;
     app_config_type appConfig;
 
     bpo::options_description optDesc("Options");
@@ -180,7 +182,12 @@ int main(int argc_, char * argv_[])
        "display the fitted tessellated solids\n"
        "Example: \n"
        "  --display")
-    
+        
+      ("shaping-mode,G", bpo::value<std::string>(&shapingModeLabel)->default_value("3")->value_name("label"),
+       "Set the shaping mode\n"
+       "Example: \n"
+       "  -G \"3\"")
+   
       ;
     // clang-format on
     bpo::variables_map vMap;
@@ -215,6 +222,18 @@ int main(int argc_, char * argv_[])
     if (vMap.count("sigma-x") != 0u) {
       appConfig.sigmaX *= CLHEP::mm;
     }
+  
+    if (vMap.count("shaping-mode") != 0u) {
+      if (shapingModeLabel == "1") {
+        appConfig.shapingMode = 1;
+      } else if (shapingModeLabel == "2") {
+        appConfig.shapingMode = 2;
+      } else if (shapingModeLabel == "3") {
+        appConfig.shapingMode = 3;
+      } else {
+        DT_THROW(std::logic_error, "Invalid shaping mode!");
+      }
+    }
 
     DT_THROW_IF(appConfig.ltdDir.empty(), std::logic_error, "Missing input raw LTD directory!");
     DT_THROW_IF(appConfig.fsfDir.empty(), std::logic_error, "Missing output FSF directory!");
@@ -224,6 +243,7 @@ int main(int argc_, char * argv_[])
     DT_LOG_NOTICE(appConfig.logging, "Output FSF directory : " << appConfig.fsfDir);
     DT_LOG_NOTICE(appConfig.logging, "Strip ID : " << appConfig.stripId);
     DT_LOG_NOTICE(appConfig.logging, "Pad ID   : " << appConfig.padId);
+    DT_LOG_NOTICE(appConfig.logging, "Shaping mode   : " << appConfig.shapingMode);
    
     DT_LOG_NOTICE(appConfig.logging, "App config : ");
     appConfig.print(std::clog);
@@ -298,6 +318,8 @@ int main(int argc_, char * argv_[])
     DT_LOG_NOTICE(appConfig.logging, "Pad ok");
 
     snrs::foil_shaping_fit_system::fit_config_type myFsfsConfig;
+    myFsfsConfig.strip_id       = appConfig.stripId;
+    myFsfsConfig.pad_id         = 0;
     myFsfsConfig.max_iter       = 4000;
     myFsfsConfig.modulo_iter    = 20;
     myFsfsConfig.epsabs         = appConfig.fitEpsAbs;
@@ -309,10 +331,13 @@ int main(int argc_, char * argv_[])
     myFsfsConfig.no_polynomial4 = appConfig.noPolynomial4;
     myFsfsConfig.sigma_x        = appConfig.sigmaX;
     myFsfsConfig.fixed_y0       = appConfig.fixedY0;
+    myFsfsConfig.shaping_mode   = appConfig.shapingMode;
     std::clog << "FSF config: " << '\n',
-    myFsfsConfig.print(std::clog);
+      myFsfsConfig.print(std::clog);
     
     snrs::foil_shaping_fit_system myFsfs(myFsfsConfig, myPad, myGeom, myLtd, appConfig.logging);
+    // myFsfs.strip_id = appConfig.stripId;
+    // myFsfs.pad_id = 0;
     DT_LOG_NOTICE(appConfig.logging, "FSFS is running...");
     int kzMin = -1;
     int kzMax = -1;
@@ -323,6 +348,12 @@ int main(int argc_, char * argv_[])
       kzMax = appConfig.kzMax;
     }
     myFsfs.run(kzMin, kzMax); 
+
+    if (kzMin <= 0) {
+      DT_LOG_NOTICE(appConfig.logging, "FSFS Smoothing fits...");
+      myFsfs.smooth_elliptic_zfits();
+      DT_LOG_NOTICE(appConfig.logging, "FSFS Smoothing is done.");
+    }
     
     if (appConfig.doPlot) {
       std::string fsfs_plot_filename = appConfig.fsfDir
@@ -425,151 +456,153 @@ int main(int argc_, char * argv_[])
     std::clog << "Z-band fit failure : " << failure_count << '\n';
 
     if (failure_count == 0) {
-      myFsfs.shape_pad(myPad);
-      {
-        std::string shapedPadDataFilename = appConfig.fsfDir
-          + '/'
-          + "strip-" + std::to_string(appConfig.stripId)
-          + "-pad-" + std::to_string(appConfig.padId)
-          + "-shaped.dat";
-        std::ofstream shapedPadDataFile(shapedPadDataFilename);
-        myPad.store(shapedPadDataFile);
-        shapedPadDataFile.close();
-        std::clog << "\nShaped pad data: " << shapedPadDataFilename << "\n";
-      }
-      if (appConfig.doPlot){
-        std::string shapedPadPlotFilename = appConfig.fsfDir
-          + '/' + "images" + '/'
-          + "strip-" + std::to_string(appConfig.stripId)
-          + "-pad-" + std::to_string(appConfig.padId)
-          + "-shaped.plot";
-        std::ofstream shapedPadPlotFile(shapedPadPlotFilename);
-        myPad.plot(shapedPadPlotFile);
-        shapedPadPlotFile.close();
-        std::clog << "\nShaped pad plot: " << shapedPadPlotFilename << "\n";
-      }
-      DT_LOG_NOTICE(appConfig.logging, "Shaped pad ok");
+      bool shapedPad = myFsfs.shape_pad(myPad);
+      // shapedPad = false;
+      if (shapedPad) {
+        {
+          std::string shapedPadDataFilename = appConfig.fsfDir
+            + '/'
+            + "strip-" + std::to_string(appConfig.stripId)
+            + "-pad-" + std::to_string(appConfig.padId)
+            + "-shaped.dat";
+          std::ofstream shapedPadDataFile(shapedPadDataFilename);
+          myPad.store(shapedPadDataFile);
+          shapedPadDataFile.close();
+          std::clog << "\nShaped pad data: " << shapedPadDataFilename << "\n";
+        }
+        if (appConfig.doPlot){
+          std::string shapedPadPlotFilename = appConfig.fsfDir
+            + '/' + "images" + '/'
+            + "strip-" + std::to_string(appConfig.stripId)
+            + "-pad-" + std::to_string(appConfig.padId)
+            + "-shaped.plot";
+          std::ofstream shapedPadPlotFile(shapedPadPlotFilename);
+          myPad.plot(shapedPadPlotFile);
+          shapedPadPlotFile.close();
+          std::clog << "\nShaped pad plot: " << shapedPadPlotFilename << "\n";
+        }
+        DT_LOG_NOTICE(appConfig.logging, "Shaped pad ok");
 
-      if (appConfig.doTestReload) {
-        DT_LOG_NOTICE(appConfig.logging, "Reloading LTC data...");
-        snrs::pad myPad2;
-        std::string shapedPadDataFilename = appConfig.fsfDir
-          + '/'
-          + "strip-" + std::to_string(appConfig.stripId)
-          + "-pad-" + std::to_string(appConfig.padId)
-          + "-shaped.dat";
-        DT_LOG_NOTICE(appConfig.logging, "Loading shaped pad data from '"
-                      << shapedPadDataFilename << "'...");
-        std::ifstream shapedPadDataFile(shapedPadDataFilename);
-        myPad2.load(shapedPadDataFile);
-        DT_LOG_NOTICE(appConfig.logging, "Load is done.");
-        std::clog << "Shaped pad (reloaded):" << '\n';
-        myPad2.print(std::clog);
-      }
+        if (appConfig.doTestReload) {
+          DT_LOG_NOTICE(appConfig.logging, "Reloading LTC data...");
+          snrs::pad myPad2;
+          std::string shapedPadDataFilename = appConfig.fsfDir
+            + '/'
+            + "strip-" + std::to_string(appConfig.stripId)
+            + "-pad-" + std::to_string(appConfig.padId)
+            + "-shaped.dat";
+          DT_LOG_NOTICE(appConfig.logging, "Loading shaped pad data from '"
+                        << shapedPadDataFilename << "'...");
+          std::ifstream shapedPadDataFile(shapedPadDataFilename);
+          myPad2.load(shapedPadDataFile);
+          DT_LOG_NOTICE(appConfig.logging, "Load is done.");
+          std::clog << "Shaped pad (reloaded):" << '\n';
+          myPad2.print(std::clog);
+        }
 
-      geomtools::vector_3d myPadOrigin(0.0,
-                                       myGeom.get_strip_ypos()[appConfig.stripId],
-                                       0.0);
-      snrs::pad_tessellator myPadTessellator(myPad, myPadOrigin);
-      snrs::pad::mesh_data_type & myMeshedPad = myPad.grab_source_mesh();
-      myPadTessellator.make_tessellated_solid(myMeshedPad, snrs::pad_tessellator::PAD_TARGET_SOURCE);
-      {
-        std::string tessellatedPadDataFilename = appConfig.fsfDir
-          + '/'
-          + "strip-" + std::to_string(appConfig.stripId)
-          + "-pad-" + std::to_string(appConfig.padId)
-          + "-tessellated.dat";
-        std::ofstream tessellatedPadDataFile(tessellatedPadDataFilename);
-        myMeshedPad.solid.store(tessellatedPadDataFile);
-        tessellatedPadDataFile.close();
-        std::clog << "\nTessellated pad data: " << tessellatedPadDataFilename << "\n";
-      }
-      {
-        std::string tilesPadDataFilename = appConfig.fsfDir
-          + '/'
-          + "strip-" + std::to_string(appConfig.stripId)
-          + "-pad-" + std::to_string(appConfig.padId)
-          + "-tiles.dat";
-        std::ofstream tilesPadDataFile(tilesPadDataFilename);
-        myMeshedPad.store_tile_maps(tilesPadDataFile);
-        tilesPadDataFile.close();
-        std::clog << "\nTiles data: " << tilesPadDataFilename << "\n";
-      }
+        geomtools::vector_3d myPadOrigin(0.0,
+                                         myGeom.get_strip_ypos()[appConfig.stripId],
+                                         0.0);
+        snrs::pad_tessellator myPadTessellator(myPad, myPadOrigin);
+        snrs::pad::mesh_data_type & myMeshedPad = myPad.grab_source_mesh();
+        myPadTessellator.make_tessellated_solid(myMeshedPad, snrs::pad_tessellator::PAD_TARGET_SOURCE);
+        {
+          std::string tessellatedPadDataFilename = appConfig.fsfDir
+            + '/'
+            + "strip-" + std::to_string(appConfig.stripId)
+            + "-pad-" + std::to_string(appConfig.padId)
+            + "-tessellated.dat";
+          std::ofstream tessellatedPadDataFile(tessellatedPadDataFilename);
+          myMeshedPad.solid.store(tessellatedPadDataFile);
+          tessellatedPadDataFile.close();
+          std::clog << "\nTessellated pad data: " << tessellatedPadDataFilename << "\n";
+        }
+        {
+          std::string tilesPadDataFilename = appConfig.fsfDir
+            + '/'
+            + "strip-" + std::to_string(appConfig.stripId)
+            + "-pad-" + std::to_string(appConfig.padId)
+            + "-tiles.dat";
+          std::ofstream tilesPadDataFile(tilesPadDataFilename);
+          myMeshedPad.store_tile_maps(tilesPadDataFile);
+          tilesPadDataFile.close();
+          std::clog << "\nTiles data: " << tilesPadDataFilename << "\n";
+        }
       
-      if (appConfig.doDisplay) {
-        app_display(myMeshedPad.solid);
-      }
-
-      if (myPad.has_film()) {
-        snrs::pad::mesh_data_type & myMeshedBackFilm = myPad.grab_back_film_mesh();
-        snrs::pad::mesh_data_type & myMeshedFrontFilm = myPad.grab_front_film_mesh();
-        {
-          myPadTessellator.make_tessellated_solid(myMeshedBackFilm,
-                                                  snrs::pad_tessellator::PAD_TARGET_BACK_FILM);
-          {
-            std::string tessellatedBackFilmFilename = appConfig.fsfDir
-              + '/'
-              + "strip-" + std::to_string(appConfig.stripId)
-              + "-pad-" + std::to_string(appConfig.padId)
-              + "-tessellated-back-film.dat";
-            std::ofstream tessellatedBackFilmFile(tessellatedBackFilmFilename);
-            myMeshedBackFilm.solid.store(tessellatedBackFilmFile);
-            tessellatedBackFilmFile.close();
-            std::clog << "\nTessellated back film data: " << tessellatedBackFilmFilename << "\n";
-          }
-          if (appConfig.doDisplay) {
-            app_display(myMeshedBackFilm.solid);
-          }
-          {
-            std::string tilesBackFilmDataFilename = appConfig.fsfDir
-              + '/'
-              + "strip-" + std::to_string(appConfig.stripId)
-              + "-pad-" + std::to_string(appConfig.padId)
-              + "-tiles-back-film.dat";
-            std::ofstream tilesBackFilmDataFile(tilesBackFilmDataFilename);
-            myMeshedBackFilm.store_tile_maps(tilesBackFilmDataFile);
-            tilesBackFilmDataFile.close();
-            std::clog << "\nTiles data: " << tilesBackFilmDataFilename << "\n";
-          }
-        }
-        {
-           myPadTessellator.make_tessellated_solid(myMeshedFrontFilm,
-                                                   snrs::pad_tessellator::PAD_TARGET_FRONT_FILM);
-          {
-            std::string tessellatedFrontFilmFilename = appConfig.fsfDir
-              + '/'
-              + "strip-" + std::to_string(appConfig.stripId)
-              + "-pad-" + std::to_string(appConfig.padId)
-              + "-tessellated-front-film.dat";
-            std::ofstream tessellatedFrontFilmFile(tessellatedFrontFilmFilename);
-            myMeshedFrontFilm.solid.store(tessellatedFrontFilmFile);
-            tessellatedFrontFilmFile.close();
-            std::clog << "\nTessellated front film data: " << tessellatedFrontFilmFilename << "\n";
-          }
-          if (appConfig.doDisplay) {
-            app_display(myMeshedFrontFilm.solid);
-          }
-          {
-            std::string tilesFrontFilmDataFilename = appConfig.fsfDir
-              + '/'
-              + "strip-" + std::to_string(appConfig.stripId)
-              + "-pad-" + std::to_string(appConfig.padId)
-              + "-tiles-front-film.dat";
-            std::ofstream tilesFrontFilmDataFile(tilesFrontFilmDataFilename);
-            myMeshedFrontFilm.store_tile_maps(tilesFrontFilmDataFile);
-            tilesFrontFilmDataFile.close();
-            std::clog << "\nTiles data: " << tilesFrontFilmDataFilename << "\n";
-          }
-        }
-        
         if (appConfig.doDisplay) {
-          app_display_exploded_view(myMeshedPad.solid, myMeshedBackFilm.solid, myMeshedFrontFilm.solid, 10 * CLHEP::cm);
+          app_display(myMeshedPad.solid);
         }
-           
+
+        if (myPad.has_film()) {
+          snrs::pad::mesh_data_type & myMeshedBackFilm = myPad.grab_back_film_mesh();
+          snrs::pad::mesh_data_type & myMeshedFrontFilm = myPad.grab_front_film_mesh();
+          {
+            myPadTessellator.make_tessellated_solid(myMeshedBackFilm,
+                                                    snrs::pad_tessellator::PAD_TARGET_BACK_FILM);
+            {
+              std::string tessellatedBackFilmFilename = appConfig.fsfDir
+                + '/'
+                + "strip-" + std::to_string(appConfig.stripId)
+                + "-pad-" + std::to_string(appConfig.padId)
+                + "-tessellated-back-film.dat";
+              std::ofstream tessellatedBackFilmFile(tessellatedBackFilmFilename);
+              myMeshedBackFilm.solid.store(tessellatedBackFilmFile);
+              tessellatedBackFilmFile.close();
+              std::clog << "\nTessellated back film data: " << tessellatedBackFilmFilename << "\n";
+            }
+            if (appConfig.doDisplay) {
+              app_display(myMeshedBackFilm.solid);
+            }
+            {
+              std::string tilesBackFilmDataFilename = appConfig.fsfDir
+                + '/'
+                + "strip-" + std::to_string(appConfig.stripId)
+                + "-pad-" + std::to_string(appConfig.padId)
+                + "-tiles-back-film.dat";
+              std::ofstream tilesBackFilmDataFile(tilesBackFilmDataFilename);
+              myMeshedBackFilm.store_tile_maps(tilesBackFilmDataFile);
+              tilesBackFilmDataFile.close();
+              std::clog << "\nTiles data: " << tilesBackFilmDataFilename << "\n";
+            }
+          }
+          {
+            myPadTessellator.make_tessellated_solid(myMeshedFrontFilm,
+                                                    snrs::pad_tessellator::PAD_TARGET_FRONT_FILM);
+            {
+              std::string tessellatedFrontFilmFilename = appConfig.fsfDir
+                + '/'
+                + "strip-" + std::to_string(appConfig.stripId)
+                + "-pad-" + std::to_string(appConfig.padId)
+                + "-tessellated-front-film.dat";
+              std::ofstream tessellatedFrontFilmFile(tessellatedFrontFilmFilename);
+              myMeshedFrontFilm.solid.store(tessellatedFrontFilmFile);
+              tessellatedFrontFilmFile.close();
+              std::clog << "\nTessellated front film data: " << tessellatedFrontFilmFilename << "\n";
+            }
+            if (appConfig.doDisplay) {
+              app_display(myMeshedFrontFilm.solid);
+            }
+            {
+              std::string tilesFrontFilmDataFilename = appConfig.fsfDir
+                + '/'
+                + "strip-" + std::to_string(appConfig.stripId)
+                + "-pad-" + std::to_string(appConfig.padId)
+                + "-tiles-front-film.dat";
+              std::ofstream tilesFrontFilmDataFile(tilesFrontFilmDataFilename);
+              myMeshedFrontFilm.store_tile_maps(tilesFrontFilmDataFile);
+              tilesFrontFilmDataFile.close();
+              std::clog << "\nTiles data: " << tilesFrontFilmDataFilename << "\n";
+            }
+          }
+        
+          if (appConfig.doDisplay) {
+            app_display_exploded_view(myMeshedPad.solid, myMeshedBackFilm.solid, myMeshedFrontFilm.solid, 10 * CLHEP::cm);
+          }
+        } 
       }
           
     } else {
-      DT_LOG_NOTICE(appConfig.logging, "Some z-band did not fit!");
+      DT_LOG_NOTICE(appConfig.logging, "Some z-band(s) did not fit!");
       error_code = EXIT_FAILURE;
     }
     
@@ -644,6 +677,7 @@ void app_config_type::print(std::ostream & out_) const
   out_ << "|-- " << "sigmaX  = " << sigmaX << '\n';
   out_ << "|-- " << "kzMin  = " << kzMin << '\n';
   out_ << "|-- " << "kzMax  = " << kzMax << '\n';
+  out_ << "|-- " << "shapingMode = " << shapingMode << '\n';
   out_ << "`-- " << "doDisplay = " << doDisplay << '\n';
 }
 
