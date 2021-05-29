@@ -111,8 +111,8 @@ We assume here a ``bash`` shell.
 Documentation
 ========================================
 
-Building Laser Tracker Data(LTD) datasets
------------------------------------------
+Building Laser Tracker Data (LTD) datasets
+-------------------------------------------
 
 Directory : ``doc/build-ltd``
 
