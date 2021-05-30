@@ -21,10 +21,6 @@ of 2018.   Its objective  is to  elaborate a  best-fit model  for each
 source strips which is significantly  deformed in the SuperNEMO source
 frame  and  for  which  a  potential impact  on  the  quality  of  the
 simulation and/or reconstruction datasets is expected.
-
-This is a very preliminary and exploratory work, still in an intensive
-development phase... It is expected that  some changes will occur in a
-near future before to provide a *production* package.
    
 
 Dependencies
@@ -62,14 +58,14 @@ We assume here a ``bash`` shell.
 	     
 	 $ mkdir /var/SuperNEMO # or any suitable place with o(GB) available space
 	 $ cd /var/SuperNEMO
-	 $ # wget https://somewhere-on-the-web/supernemo-repository/SNLTD_3D_measurements-1.0.tar.gz . 
-	 $ tar xzf SNLTD_3D_measurements-1.0.tar.gz
+	 $ # Download the tarball SNLTD_3D_measurements-1.1.tar.gz  which contains raw LTD datasets from CCIN2P3... 
+	 $ tar xzf SNLTD_3D_measurements-1.1.tar.gz
 	 $ export RAW_LTD_DATA_DIR="/var/SuperNEMO/SNLTD_3D_measurements"
       ..
 
 #. Configure, build and install SNRS:
 
-   Several configuration options  are proposed but should  not be used
+   Several configuration options are proposed but should  not be used
    for a production installation:
 
    - ``SNRS_DEVELOPER_BUILD`` (default:  ``OFF``) : this  build option
@@ -78,7 +74,7 @@ We assume here a ``bash`` shell.
      raw LTD datasets.
    - ``SNRS_ENABLE_TESTING`` (default: ``OFF``) : build test programs.
    - ``SNRS_GENERATE_DATA`` (default: ``OFF``)  : generate fitted mesh
-     datasets   at    build/installation   stage   (    reserved   for
+     datasets   at    build/installation   stage   (reserved   for
      developper(s)).
    - ``SNRS_WITH_DOC``    (default:   ``OFF``)    :   generate    some
      documentation files (reserved for developper(s)).
