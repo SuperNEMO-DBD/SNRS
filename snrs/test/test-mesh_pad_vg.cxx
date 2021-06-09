@@ -27,12 +27,29 @@
 #include <snrs/mesh_pad_model.hpp>
 #include <snrs/mesh_pad_vg.hpp>
 
-int main()
+int main(int argc_, char ** argv_)
 {
   datatools::logger::priority logging = datatools::logger::PRIO_NOTICE;
   try {
-    bool draw = true;
-    
+    bool draw = false;
+    int vgVersion=1;
+    int stripId = 32;
+    int iarg = 1;
+    while (iarg < argc_) {
+      std::string token(argv_[iarg]);
+      if (token == "--version-1") {
+        vgVersion = 1;
+      } else if (token == "--version-2") {
+        vgVersion = 2;
+      } else if (token == "--strip-32") {
+        stripId = 32;
+      } else if (token == "--strip-34") {
+        stripId = 34;
+      } else if (token == "--draw") {
+        draw = true;
+      }
+      iarg++;
+    }
     std::string geoMgrConfigPath
       = "${SNRS_TESTING_DIR}/config/geometry_manager.conf";
     datatools::fetch_path_with_env(geoMgrConfigPath);
@@ -42,7 +59,6 @@ int main()
     geoMgr.initialize(geoMgrConfig);
     geoMgr.tree_dump(std::clog, "The geometry manager : ");
 
-    int stripId = 34;
     int padId = 0;
     std::string gid_repr("[1131:0."
                          + std::to_string(stripId) + "."
@@ -61,8 +77,8 @@ int main()
     tmp_file.create(".", "snrs-test-mesh_pad_vg_draw_");
     std::ostream & output = tmp_file.out();
 
-    std::cerr << "[DEVEL] WR_BASE_GRID=" << geomtools::i_wires_3d_rendering::WR_BASE_GRID << '\n';
-    std::cerr << "[DEVEL] WR_TESSELLA_ALL_SEGMENTS=" << geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS << '\n';
+    // std::cerr << "[DEVEL] WR_BASE_GRID=" << geomtools::i_wires_3d_rendering::WR_BASE_GRID << '\n';
+    // std::cerr << "[DEVEL] WR_TESSELLA_ALL_SEGMENTS=" << geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS << '\n';
     uint32_t draw_options = geomtools::i_wires_3d_rendering::WR_BASE_GRID
       | geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS; 
     geomtools::gnuplot_draw::draw_tessellated(output,
@@ -73,11 +89,16 @@ int main()
     
     std::string meshPadVgConfigPath
       = "${SNRS_TESTING_DIR}/config/mesh_pad_vg.conf";
+    if (vgVersion == 2) {
+      meshPadVgConfigPath
+      = "${SNRS_TESTING_DIR}/config/mesh_pad_vg2.conf";
+    }
     datatools::fetch_path_with_env(meshPadVgConfigPath);
     snrs::mesh_pad_vg meshPadVg;
     datatools::properties meshPadVgConfig;
     datatools::properties::read_config(meshPadVgConfigPath, meshPadVgConfig);
 
+    std::clog << "Initializing random generator...\n";
     int32_t seed = 314159;
     mygsl::rng random(seed);
     meshPadVg.set_external_prng(random);
@@ -85,6 +106,7 @@ int main()
     meshPadVg.initialize_standalone(meshPadVgConfig);
 
     std::size_t nbvtx = 10000;
+    std::clog << "Start vertex generation loop [" << nbvtx << "]\n";
     for (std::size_t ivtx = 0; ivtx < nbvtx; ivtx++) {
       geomtools::vector_3d vertex;
       meshPadVg.shoot_vertex(vertex);

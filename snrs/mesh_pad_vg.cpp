@@ -762,22 +762,31 @@ namespace snrs {
                                        ::geomtools::vector_3d & vertex_)
   {
     static const geomtools::vector_3d ux(1.0, 0.0, 0.0);
-    unsigned int nb_facets = _pimpl_->surface_infos.facet_infos.size();
-    unsigned int index_facet = random_.uniform_int(nb_facets);
-    const facet_info_type & facetInfo = _pimpl_->surface_infos.facet_infos[index_facet];
-    const geomtools::facet34 & facet = *facetInfo.ptr_facet;
-    const geomtools::vector_3d & vtx0 = facet.get_vertex(0).get_position();
-    const geomtools::vector_3d & vtx1 = facet.get_vertex(1).get_position();
-    const geomtools::vector_3d & vtx2 = facet.get_vertex(2).get_position();
-    geomtools::vector_3d normal = facet.get_normal();    
+    unsigned int nb_tiles = _pimpl_->bulk_infos.tile_infos.size();
+    unsigned int index_tile = random_.uniform_int(nb_tiles);
+    const tile_info_type & tileInfo = _pimpl_->bulk_infos.tile_infos[index_tile];
+    const geomtools::facet34 & backFacet = *tileInfo.ptr_back_facet;
+    const geomtools::facet34 & frontFacet = *tileInfo.ptr_front_facet;
+    const geomtools::vector_3d & bVtx0 = backFacet.get_vertex(0).get_position();
+    const geomtools::vector_3d & bVtx1 = backFacet.get_vertex(1).get_position();
+    const geomtools::vector_3d & bVtx2 = backFacet.get_vertex(2).get_position();
+    const geomtools::vector_3d & fVtx0 = frontFacet.get_vertex(0).get_position();
+    const geomtools::vector_3d & fVtx1 = frontFacet.get_vertex(1).get_position();
+    const geomtools::vector_3d & fVtx2 = frontFacet.get_vertex(2).get_position();
+    geomtools::vector_3d normal = backFacet.get_normal();    
     if (normal.dot(ux) > 0) normal *= -1.0;  
     geomtools::vector_3d local_vertex = 
-      genvtx::triangle_random_surface(vtx0, vtx1, vtx2, random_);
+      genvtx::triangle_random_surface(bVtx0, bVtx1, bVtx2, random_);
     double skip = _skin_skip_ + _skin_thickness_ * random_.flat(-0.5, 0.5);
-    local_vertex += normal * skip;
+    local_vertex -= normal * skip;
+    // Compute the vertex position in the strip frame:
+    geomtools::vector_3d source_strip_vertex;
+    _pimpl_->tessella_placement.child_to_mother(local_vertex, source_strip_vertex);
+    // Compute the vertex position in the world frame:
     const geomtools::placement & world_plct
       = _pimpl_->ginfo->get_world_placement();
-    world_plct.child_to_mother(local_vertex, vertex_);
+    DT_LOG_DEBUG(get_logging_priority(), "World placement : " << world_plct);
+    world_plct.child_to_mother(source_strip_vertex, vertex_);
     return;
   }
 
