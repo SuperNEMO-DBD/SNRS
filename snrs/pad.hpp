@@ -52,6 +52,7 @@ namespace snrs {
        FACE_FRONT = 1
       };
 
+   
     struct z_distortion_data_type
     {
       int kz = -1;
@@ -75,9 +76,11 @@ namespace snrs {
     {
     public:
       
-      static const uint32_t INVALID_INDEX = -1;
-      static const uint32_t ANY_INDEX     = -2;
-
+      static const int32_t INVALID_INDEX = -1;
+      static const int32_t ANY_INDEX     = -2;
+      static const int32_t PART_DOWN = 0;
+      static const int32_t PART_UP   = 1;
+ 
       tile_id() = default;
 
       tile_id(int32_t side_, int32_t column_, int32_t row_, int32_t part_);
@@ -93,6 +96,8 @@ namespace snrs {
       bool operator==(const tile_id & tid_) const;
       
       bool operator<(const tile_id & tid_) const;
+
+      void set_side(int32_t side_);
 
       void set(int32_t side_, int32_t column_, int32_t row_, int32_t part_);
   
@@ -162,6 +167,19 @@ namespace snrs {
     void set_film_thickness(double);
     void set_material(const std::string & material_);
     void set_film_material(const std::string & film_material_);
+
+    // Overall convexity (if known)
+    enum convexity_type
+      {
+       CONVEXITY_UNDEF   = 0,
+       CONVEXITY_CONVEX  = 1,
+       CONVEXITY_CONCAVE = 2
+      };
+    bool has_convexity() const;
+    bool is_concave() const;
+    bool is_convex() const;
+    void set_convexity(convexity_type);
+    
     const std::string & get_material() const;
     const std::string & get_film_material() const;
     const distortion_data_type & get_distortion() const;
@@ -218,6 +236,7 @@ namespace snrs {
     std::string _material_;
     geomtools::vector_3d _original_position_;
     distortion_data_type _distortion_;
+    convexity_type _convexity_ = CONVEXITY_UNDEF; ///< Overall convexity (if known)
     double   _film_thickness_ = datatools::invalid_real();
     std::string _film_material_;
     

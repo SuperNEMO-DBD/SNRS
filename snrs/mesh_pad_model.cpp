@@ -73,6 +73,21 @@ namespace snrs {
     return "snrs::mesh_pad_model";
   }
 
+  const geomtools::plain_model & mesh_pad_model::get_source_model() const
+  {
+    return _source_model_;
+  }
+
+  const geomtools::plain_model & mesh_pad_model::get_back_film_model() const
+  {
+    return _back_film_model_;
+  }
+
+  const geomtools::plain_model & mesh_pad_model::get_front_film_model() const
+  {
+    return _front_film_model_;
+  }
+
   mesh_pad_model::mesh_pad_model()
     : i_boxed_model()
   {
@@ -91,7 +106,7 @@ namespace snrs {
                                      geomtools::models_col_type * models_)
   {
     auto logging = get_logging_priority();
-    logging = datatools::logger::PRIO_NOTICE;
+    // logging = datatools::logger::PRIO_NOTICE;
     DT_LOG_TRACE(logging,  "Entering...");
     int strip_id = -1;
     int pad_id   = 0;
@@ -275,11 +290,11 @@ namespace snrs {
     //             << " mm is not in [" << min_width/CLHEP::mm << "," << max_width/CLHEP::mm << "] mm!");
      
     if (_pad_.has_film()) {
-      std::string pad_back_film_mesh_filename  = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tessellated-back-film.dat";
-      std::string pad_back_film_tiles_filename = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tiles-back-film.dat";
-      std::string pad_front_film_mesh_filename  = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tessellated-back-film.dat";
-      std::string pad_front_film_tiles_filename = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tiles-back-film.dat";
-      // Back and front film mesh:es and tile maps:
+      std::string pad_back_film_mesh_filename   = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tessellated-back-film.dat";
+      std::string pad_back_film_tiles_filename  = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tiles-back-film.dat";
+      std::string pad_front_film_mesh_filename  = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tessellated-front-film.dat";
+      std::string pad_front_film_tiles_filename = "@snrs:data/geometry/source_foils/fsf/strip-" + std::to_string(strip_id) + "-pad-" + std::to_string(pad_id) + "-tiles-front-film.dat";
+      // Back and front film meshes and tile maps:
       if (config_.has_key("pad.back_film.load_mesh")) {
         pad_back_film_mesh_filename = config_.fetch_path("pad.back_film.load_mesh");
       }
@@ -298,6 +313,9 @@ namespace snrs {
         DT_THROW_IF(!fBackFilmMeshFile, std::logic_error, "Cannot open file '" << pad_back_film_mesh_filename << "'!");
         _pad_.grab_back_film_mesh().solid.load(fBackFilmMeshFile);
         _pad_.grab_back_film_mesh().solid.lock();
+        if (datatools::logger::is_debug(logging)) {
+          _pad_.get_back_film_mesh().solid.tree_dump(std::cerr, "Back film mesh: ", "[debug] ");
+        }
       }  
       {
         datatools::fetch_path_with_env(pad_back_film_tiles_filename);
@@ -311,7 +329,9 @@ namespace snrs {
         DT_THROW_IF(!fFrontFilmMeshFile, std::logic_error, "Cannot open file '" << pad_front_film_mesh_filename << "'!");
         _pad_.grab_front_film_mesh().solid.load(fFrontFilmMeshFile);
         _pad_.grab_front_film_mesh().solid.lock();
-        _pad_.grab_front_film_mesh().solid.tree_dump(std::cerr, "Front film mesh: ", "[debug] ");
+        if (datatools::logger::is_debug(logging)) {
+          _pad_.get_front_film_mesh().solid.tree_dump(std::cerr, "Front film mesh: ", "[debug] ");
+        }
       }   
       {
         datatools::fetch_path_with_env(pad_front_film_tiles_filename);
@@ -383,7 +403,8 @@ namespace snrs {
       + geomtools::i_model::model_suffix();
     if (_pad_.has_film()) {
       // Back film:
-      geomtools::placement back_film_placement(_x_shift_, _y_shift_, 0.0, 0.0, 0.0, 0.0);
+      geomtools::placement back_film_placement(source_placement);
+      DT_LOG_NOTICE(logging, "Back film placement = " << back_film_placement);
       _back_film_model_.set_name(back_film_model_name);
       _back_film_model_.set_solid(_pad_.get_back_film_mesh().solid);
       _film_material_name_ = _pad_.get_film_material();
@@ -398,7 +419,8 @@ namespace snrs {
                            back_film_placement);
 
       // Front film:
-      geomtools::placement front_film_placement(_x_shift_, _y_shift_, 0.0, 0.0, 0.0, 0.0);
+      geomtools::placement front_film_placement(source_placement);
+      DT_LOG_NOTICE(logging, "Front film placement = " << front_film_placement);
       _front_film_model_.set_name(front_film_model_name);
       _front_film_model_.set_solid(_pad_.get_front_film_mesh().solid);
       _film_material_name_ = _pad_.get_film_material();
@@ -429,7 +451,7 @@ namespace snrs {
   void mesh_pad_model::_at_destroy(geomtools::models_col_type * models_)
   {
     auto logging = get_logging_priority();
-    logging = datatools::logger::PRIO_NOTICE;
+    // logging = datatools::logger::PRIO_NOTICE;
     DT_LOG_TRACE(logging,  "Entering...");
     std::string source_model_name
       = geomtools::i_model::extract_basename_from_model_name(get_name())

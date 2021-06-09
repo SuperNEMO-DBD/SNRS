@@ -232,7 +232,10 @@ if(snrs_generate_data EQUAL 1)
   
   add_custom_command(OUTPUT ${SNRS_DATA_DIR}/geometry/source_foils/ltd/processed-strips.lis
     COMMAND "${CMAKE_SOURCE_DIR}/scripts/build-ltd.bash"
-    ARGS "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--raw-ltd-dir" "${RAW_LTD_DATA_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
+    ARGS "--source-dir" "${CMAKE_SOURCE_DIR}"
+    "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}"
+    "--raw-ltd-dir" "${RAW_LTD_DATA_DIR}"
+    "--snrs-data-dir" "${SNRS_DATA_DIR}" ${_plotOption}
     COMMENT "Build the SNRS Laser Tracker datasets (LTD) associated to individual strips"
     DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-ltd.bash ${CMAKE_SOURCE_DIR}/scripts/plot_ltd_strip.gp 
     VERBATIM)
@@ -277,7 +280,10 @@ if(snrs_generate_data EQUAL 1)
 
   add_custom_target(snrsBuildFsfDataset ALL
     "${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash"
-    "--source-dir" "${CMAKE_SOURCE_DIR}" "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}" "--snrs-data-dir" "${SNRS_DATA_DIR}" "${_plotOption}"
+    "--source-dir" "${CMAKE_SOURCE_DIR}"
+    "--build-dir" "${CMAKE_CURRENT_BINARY_DIR}"
+    "--snrs-resource-dir" "${PROJECT_SOURCE_DIR}/resources"
+    "--snrs-data-dir" "${SNRS_DATA_DIR}" "${_plotOption}"
     DEPENDS ${CMAKE_SOURCE_DIR}/scripts/build-fsf.bash ${CMAKE_SOURCE_DIR}/scripts/plot_fsf_strip.gp
     BYPRODUCTS ${SNRS_DATA_DIR}/geometry/source_foils/fsf/processed-strips.lis
     COMMENT "Build the SNRS Foil Shaping Fit (FSF) datasets associated to individual strips"

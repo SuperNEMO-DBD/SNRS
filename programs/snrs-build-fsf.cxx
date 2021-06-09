@@ -596,7 +596,9 @@ int main(int argc_, char * argv_[])
           }
         
           if (appConfig.doDisplay) {
-            app_display_exploded_view(myMeshedPad.solid, myMeshedBackFilm.solid, myMeshedFrontFilm.solid, 10 * CLHEP::cm);
+            double explosion_gap = 10 * CLHEP::cm;
+            explosion_gap = 50 * CLHEP::micrometer;
+            app_display_exploded_view(myMeshedPad.solid, myMeshedBackFilm.solid, myMeshedFrontFilm.solid, explosion_gap);
           }
         } 
       }
@@ -761,16 +763,19 @@ void app_display_exploded_view(const geomtools::tessellated_solid & sts_,
                                             tessel_rot,
                                             sts_,
                                             geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS);
+  tmp_file.out() << '\n';
   geomtools::gnuplot_draw::draw_tessellated(tmp_file.out(),
                                             back_tessel_pos,
                                             tessel_rot,
                                             bfts_,
                                             geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS);
+  tmp_file.out() << '\n';
   geomtools::gnuplot_draw::draw_tessellated(tmp_file.out(),
                                             front_tessel_pos,
                                             tessel_rot,
                                             ffts_,
                                             geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS);
+  tmp_file.out() << '\n';
   tmp_file.out() << std::endl;
   tmp_file.close();
   usleep(200);
@@ -784,13 +789,21 @@ void app_display_exploded_view(const geomtools::tessellated_solid & sts_,
       g1.cmd(title.str());
     }
     g1.cmd("set grid");
-    g1.cmd("set view equal xyz");
+    // g1.cmd("set view equal xyz");
     g1.cmd("set size ratio -1");
     g1.cmd("set xyplane at -1400");
-    g1.set_xrange(-100*CLHEP::mm-gap_, +100*CLHEP::mm+gap_).set_zrange(-1500*CLHEP::mm, +1500*CLHEP::mm);
+    double xrange = 30 * CLHEP::mm + gap_;
+    g1.set_xrange(-xrange, +xrange).set_zrange(-1500 * CLHEP::mm, +1500 * CLHEP::mm);
     g1.set_xlabel("x (mm)").set_ylabel("y (mm)").set_zlabel("z (mm)");
-
-    g1.plotfile_xyz(tmp_file.get_filename (), 1, 2, 3, "3D view");
+    std::ostringstream cmdstr;
+    cmdstr << "splot '" << tmp_file.get_filename() << "' index 0 using 1:2:3 title 'Source pad' with lines "
+           << ", '' index 1 using 1:2:3 title 'Back film' with lines "
+           << ", '' index 2 using 1:2:3 title 'Front film' with lines "
+      ;
+      
+    g1.cmd("set title '3D view'");
+    g1.cmd(cmdstr.str());
+    // g1.plotfile_xyz(tmp_file.get_filename (), 1, 2, 3, "3D view");
     g1.showonscreen(); // window output
     geomtools::gnuplot_drawer::wait_for_key();
     usleep(200);

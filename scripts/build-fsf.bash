@@ -5,6 +5,7 @@ interactive=false
 srcDir=
 buildDir=
 snrsDataDir=
+snrsResourceDir=
 doPlot=false
 padNy=10
 padNz=100
@@ -78,6 +79,9 @@ while [ -n "$1" ]; do
     elif [ "x${opt}" = "x--snrs-data-dir" ]; then
 	shift 1
 	snrsDataDir="$1"
+    elif [ "x${opt}" = "x--snrs-resource-dir" ]; then
+	shift 1
+	snrsResourceDir="$1"
     elif [ "x${opt}" = "x--plot" ]; then
 	doPlot=true
     elif [ "x${opt}" = "x--no-plot" ]; then
@@ -107,7 +111,11 @@ fi
 echo >&2 "[info] snrsBuildFsfExe='${snrsBuildFsfExe}'"
 echo >&2 "[info] snrsFsfPlotScript='${snrsFsfPlotScript}'"
 echo >&2 "[info] snrsMacroDir='${snrsMacroDir}'"
+echo >&2 "[info] snrsResourceDir='${snrsResourceDir}'"
 
+if [ "x${snrsResourceDir}" != "x" ]; then
+    export SNRS_RESOURCE_PATH="${snrsResourceDir}"
+fi
 # snrsBuildFsfExe=$(which snrs-build-fsf)
 # if [ -z '${snrsBuildFsfExe}' ]; then
 #     snrsBuildFsfExe=${buildDir}/snrs-build-fsf
@@ -123,6 +131,7 @@ fi
 if [ ! -d ${snrsDataDir} ]; then
     app_exit 1 "SNRS data directory '${snrsDataDir}' does not exists!"
 fi
+echo >&2 "[info] snrsDataDir='${snrsDataDir}'"
 
 snrsLtdDir=
 snrsFsfDir=
@@ -217,16 +226,19 @@ for stripId in ${itepLists} ; do
 	fi
 	echo "${stripId}" >> "${snrsFsfDir}/processed-strips.lis"
     fi
-    if [ ${doPlot} = true ]; then
-	echo >&2 "[info] Generating FSF plots for strip ${stripId}..."
-	if [ ${interactive} = false ]; then
-	    echo -e "\n\n" | gnuplot -e "stripId=${stripId}" \
-				     -e "macroDir='${snrsMacroDir}'" \
-				     -e "fsfDir='${snrsFsfDir}'" ${snrsFsfPlotScript}
-	else
-	    gnuplot -e "stripId=${stripId}" \
-		    -e "macroDir='${snrsMacroDir}'" \
-		    -e "fsfDir='${snrsFsfDir}'" ${snrsFsfPlotScript}
+    plotStrip=${processStrip}
+    if [ ${plotStrip} = true ]; then
+	if [ ${doPlot} = true ]; then
+	    echo >&2 "[info] Generating FSF plots for strip ${stripId}..."
+	    if [ ${interactive} = false ]; then
+		echo -e "\n\n" | gnuplot -e "stripId=${stripId}" \
+					 -e "macroDir='${snrsMacroDir}'" \
+					 -e "fsfDir='${snrsFsfDir}'" ${snrsFsfPlotScript}
+	    else
+		gnuplot -e "stripId=${stripId}" \
+			-e "macroDir='${snrsMacroDir}'" \
+			-e "fsfDir='${snrsFsfDir}'" ${snrsFsfPlotScript}
+	    fi
 	fi
     fi
 done

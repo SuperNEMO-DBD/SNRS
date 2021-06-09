@@ -36,18 +36,32 @@ namespace snrs {
     std::vector<facet_info_type> facet_infos;
   };
 
+  struct tile_info_type
+  {
+    const geomtools::facet34 * ptr_back_facet = nullptr;
+    const geomtools::facet34 * ptr_front_facet = nullptr;
+  };
+  
+  struct tile_info_col_type
+  {
+    std::vector<tile_info_type> tile_infos;
+  };
+ 
   struct mesh_pad_vg::pimpl_type
   {
     const geomtools::geom_info * ginfo = nullptr;
     const geomtools::logical_volume * log_vol = nullptr;
+    geomtools::placement tessella_placement;
     const geomtools::i_model * geo_model = nullptr;
     const mesh_pad_model * pad_model = nullptr;
     const pad * the_pad = nullptr;
     surface_info_col_type surface_infos;
+    tile_info_col_type    bulk_infos;
 
     void reset()
     {
       surface_infos.facet_infos.clear();
+      bulk_infos.tile_infos.clear();
       the_pad = nullptr;
       pad_model = nullptr;
       geo_model = nullptr;
@@ -145,7 +159,7 @@ namespace snrs {
     DT_THROW_IF (is_initialized(), std::logic_error,
                  "Vertex generator '" << get_name() << "' is already initialized !");
     DT_THROW_IF (st_ < 0.0, std::logic_error,
-                 "Invalid skin thickness in ertex generator '" << get_name() << "'!");
+                 "Invalid skin thickness in vertex generator '" << get_name() << "'!");
     _skin_thickness_ = st_;
     return;
   }
@@ -284,6 +298,11 @@ namespace snrs {
         _pimpl_->ginfo = &(i->second);
         _pimpl_->log_vol = &(_pimpl_->ginfo->get_logical());
         _pimpl_->geo_model = &(_pimpl_->log_vol->get_geometry_model());
+        // Trick: use the source foil placement as the general placement for any tiles in the tessellated mesh (source or film)
+        // for (auto p : _pimpl_->log_vol->get_physicals()) {
+        //   DT_LOG_DEBUG(get_logging_priority(), "Physical: key=" << p.first << " vol=" << p.second->get_name());
+        // }
+        _pimpl_->tessella_placement = _pimpl_->log_vol->get_physical("source.phys").get_placement().get_placement(0);
         found = true;
         break;
       }
@@ -304,6 +323,70 @@ namespace snrs {
                << get_name() << "' !");
     }
     
+    // Mode bulk:
+    if (is_mode_bulk()) {
+      _skin_skip_ = -0.5 * _pimpl_->the_pad->get_thickness();
+      double skin_tolerance = 0.0;
+      // Using skin thickness as a tolerance:
+      if (datatools::is_valid(_skin_thickness_)) {
+        skin_tolerance = _skin_thickness_;
+      }
+      // Force skin thickness to the pad tickness
+      _skin_thickness_ = _pimpl_->the_pad->get_thickness() - skin_tolerance;
+      std::size_t nbTiles = _pimpl_->the_pad->get_source_mesh().tile_map.size();
+      _pimpl_->bulk_infos.tile_infos.reserve(nbTiles);
+      const pad::mesh_data_type * mesh = &(_pimpl_->the_pad->get_source_mesh());
+      const pad::tile_map_type & tileMap = mesh->tile_map;
+      for (const auto & tileRecord : tileMap) {
+        const pad::tile_id & backTileId = tileRecord.first;
+        // Only use back tiles has reference:
+        if (backTileId.get_side() != pad::FACE_BACK) continue;
+        pad::tile_id frontTileId = backTileId;
+        frontTileId.set_side(pad::FACE_FRONT);
+        if (_tile_selection_ == TS_RANGE) {
+          if (not _tiles_part_0_) {
+            if (backTileId.get_part() == 0) continue;
+          }
+          if (not _tiles_part_1_) {
+            if (backTileId.get_part() == 1) continue;
+          }
+          if (_tiles_min_row_ >= 0) {
+            if (backTileId.get_row() < _tiles_min_row_) continue;
+          }
+          if (_tiles_max_row_ >= 0) {
+            if (backTileId.get_row() > _tiles_max_row_) continue;
+          }
+          if (_tiles_min_column_ >= 0) {
+            if (backTileId.get_column() < _tiles_min_column_) continue;
+          }
+          if (_tiles_max_column_ >= 0) {
+            if (backTileId.get_column() > _tiles_max_column_) continue;
+          }
+        }
+        if (_tile_selection_ == TS_PATTERNS) {
+          // DT_LOG_DEBUG(get_logging_priority(), "Tile selection 'patterns'");
+          bool valid_tile_id = false;
+          for (const pad::tile_id & pattern : _tiles_patterns_) {
+            if (pattern.match(backTileId)) {
+              valid_tile_id = true;
+              break;
+            }
+          }
+          if (not valid_tile_id) continue;
+        }
+        DT_LOG_DEBUG(get_logging_priority(), "Accumulating tile IDs=(back=" << backTileId << ",front=" << frontTileId << ')');
+        unsigned int backFacetId = tileRecord.second;
+        unsigned int frontFacetId = tileMap.find(frontTileId)->second;
+        tile_info_type tileInfo;
+        // Reference both back and front tiles:
+        tileInfo.ptr_back_facet  = &mesh->solid.facets().find(backFacetId)->second;
+        tileInfo.ptr_front_facet = &mesh->solid.facets().find(frontFacetId)->second;
+        _pimpl_->bulk_infos.tile_infos.push_back(tileInfo);
+      }
+      DT_LOG_DEBUG(get_logging_priority(),
+                   "Number of tiles : " << _pimpl_->bulk_infos.tile_infos.size());
+    }
+    
     // Mode surface/film bulk:
     if (is_mode_surface() or is_film_bulk()) {
 
@@ -319,6 +402,13 @@ namespace snrs {
       std::size_t nbFacets = _pimpl_->the_pad->get_source_mesh().tile_map.size();
       _pimpl_->surface_infos.facet_infos.reserve(nbFacets);
 
+      if (_tile_selection_ == TS_RANGE) {
+        DT_LOG_DEBUG(get_logging_priority(), "Tile selection 'range'");
+      }
+      if (_tile_selection_ == TS_PATTERNS) {
+        DT_LOG_DEBUG(get_logging_priority(), "Tile selection 'patterns'");
+      }
+      
       // Back side:
       if (is_back_side()) {
         const pad::mesh_data_type * mesh = nullptr;
@@ -354,7 +444,6 @@ namespace snrs {
             }
           }
           if (_tile_selection_ == TS_PATTERNS) {
-            // DT_LOG_DEBUG(get_logging_priority(), "Tile selection 'patterns'");
             bool valid_tile_id = false;
             for (const pad::tile_id & pattern : _tiles_patterns_) {
               if (pattern.match(tileId)) {
@@ -428,8 +517,8 @@ namespace snrs {
       }
       DT_LOG_DEBUG(get_logging_priority(),
                    "Number of tiles : " << _pimpl_->surface_infos.facet_infos.size());
-      // XXX
-    } // Mode surface/film bulk:
+    } // Mode surface/film bulk
+    
     return;
   }
   
@@ -498,6 +587,8 @@ namespace snrs {
       DT_THROW_IF(film_bulk, std::logic_error, "Skin skip should not been set in film bulk mode in vertex generator '" << get_name() << "' !");
       skin_skip = setup_.fetch_real_with_explicit_dimension("skin_skip", "length");
     }
+    DT_LOG_DEBUG(get_logging_priority(), "skin_thickness = " << skin_thickness / CLHEP::mm << " mm");
+    DT_LOG_DEBUG(get_logging_priority(), "skin_skip      = " << skin_skip / CLHEP::mm << " mm");
 
     // Tile selection:
     bool tile_range = false;
@@ -567,8 +658,8 @@ namespace snrs {
     set_mode(mode);
     set_film_bulk(film_bulk);
     if (is_mode_surface () or is_film_bulk()) {
-      set_back_side (back_side);
-      set_front_side (front_side);
+      set_back_side(back_side);
+      set_front_side(front_side);
     }
     if (not is_film_bulk() and datatools::is_valid(skin_skip)) {
       set_skin_skip(skin_skip);
@@ -582,15 +673,15 @@ namespace snrs {
                      tiles_part_0, tiles_part_1);
     }
     
-    _init_ ();
+    _init_();
     _initialized_ = true;
     return;
   }
 
-  void mesh_pad_vg::tree_dump (std::ostream & out_,
-                               const std::string & title_,
-                               const std::string & indent_,
-                               bool inherit_) const
+  void mesh_pad_vg::tree_dump(std::ostream & out_,
+                              const std::string & title_,
+                              const std::string & indent_,
+                              bool inherit_) const
   {
     namespace du = datatools;
     std::string indent;
@@ -674,6 +765,19 @@ namespace snrs {
     unsigned int nb_facets = _pimpl_->surface_infos.facet_infos.size();
     unsigned int index_facet = random_.uniform_int(nb_facets);
     const facet_info_type & facetInfo = _pimpl_->surface_infos.facet_infos[index_facet];
+    const geomtools::facet34 & facet = *facetInfo.ptr_facet;
+    const geomtools::vector_3d & vtx0 = facet.get_vertex(0).get_position();
+    const geomtools::vector_3d & vtx1 = facet.get_vertex(1).get_position();
+    const geomtools::vector_3d & vtx2 = facet.get_vertex(2).get_position();
+    geomtools::vector_3d normal = facet.get_normal();    
+    if (normal.dot(ux) > 0) normal *= -1.0;  
+    geomtools::vector_3d local_vertex = 
+      genvtx::triangle_random_surface(vtx0, vtx1, vtx2, random_);
+    double skip = _skin_skip_ + _skin_thickness_ * random_.flat(-0.5, 0.5);
+    local_vertex += normal * skip;
+    const geomtools::placement & world_plct
+      = _pimpl_->ginfo->get_world_placement();
+    world_plct.child_to_mother(local_vertex, vertex_);
     return;
   }
 
@@ -687,6 +791,8 @@ namespace snrs {
     const facet_info_type & facetInfo = _pimpl_->surface_infos.facet_infos[index_facet];
     bool back = (facetInfo.side == pad::FACE_BACK);
     bool front = (facetInfo.side == pad::FACE_FRONT);
+    DT_LOG_DEBUG(get_logging_priority(), "Back facet  : " << std::boolalpha << back);
+    DT_LOG_DEBUG(get_logging_priority(), "Front facet : " << std::boolalpha << front);
     const geomtools::facet34 & facet = *facetInfo.ptr_facet;
     const geomtools::vector_3d & vtx0 = facet.get_vertex(0).get_position();
     const geomtools::vector_3d & vtx1 = facet.get_vertex(1).get_position();
@@ -694,24 +800,36 @@ namespace snrs {
     geomtools::vector_3d normal = facet.get_normal();    
     if (back and normal.dot(ux) > 0) normal *= -1.0;  
     if (front and normal.dot(ux) < 0) normal *= -1.0;
+    DT_LOG_DEBUG(get_logging_priority(), "Normal : " << normal / CLHEP::mm  << " mm");
     geomtools::vector_3d local_vertex = 
       genvtx::triangle_random_surface(vtx0, vtx1, vtx2, random_);
+    // local_vertex = vtx0; // Test
     double skip = 0.0;
     bool has_skip = false;
     if (datatools::is_valid(_skin_skip_) and _skin_skip_ != 0.0) {
       skip += _skin_skip_;
+      DT_LOG_DEBUG(get_logging_priority(), "Skin skip = " << _skin_skip_ / CLHEP::mm  << " mm");
       has_skip = true;
     }
     if (datatools::is_valid(_skin_thickness_) and _skin_thickness_ > 0.0) {
+      DT_LOG_DEBUG(get_logging_priority(), "Skin thickness = " << _skin_thickness_ / CLHEP::mm  << " mm");
       skip += _skin_thickness_ * random_.flat(-0.5, 0.5);
       has_skip = true;
     }
+    DT_LOG_DEBUG(get_logging_priority(), "Skip : " << skip / CLHEP::mm  << " mm");
     if (has_skip) {
       local_vertex += normal * skip;
     }
+    DT_LOG_DEBUG(get_logging_priority(), "Log volume : " << _pimpl_->log_vol->get_name());
+    DT_LOG_DEBUG(get_logging_priority(), "  -> internal volumes : " << _pimpl_->log_vol->get_physicals().size());
+    // Compute the vertex position in the strip frame:
+    geomtools::vector_3d source_strip_vertex;
+    _pimpl_->tessella_placement.child_to_mother(local_vertex, source_strip_vertex);
+    // Compute the vertex position in the world frame:
     const geomtools::placement & world_plct
       = _pimpl_->ginfo->get_world_placement();
-    world_plct.child_to_mother(local_vertex, vertex_);
+    DT_LOG_DEBUG(get_logging_priority(), "World placement : " << world_plct);
+    world_plct.child_to_mother(source_strip_vertex, vertex_);
     return;
   }
 

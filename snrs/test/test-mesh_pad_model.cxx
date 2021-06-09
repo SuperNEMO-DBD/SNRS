@@ -41,6 +41,46 @@ int main()
                 << " : logical='" << ginfo.second.get_logical().get_name() << "' " << '\n';
     }
 
+    int stripId = 32;
+    int padId = 0;
+    {
+      std::clog << "Source strip #: " << '\n';
+      geomtools::geom_id gId(1102, 0, stripId);
+      std::clog << "  GID = " << gId << '\n';
+      const geomtools::geom_info & gInfo = theMapping.get_geom_infos().find(gId)->second;
+      const auto & gLog = gInfo.get_logical();
+      const auto & gShape = gLog.get_shape();
+      gShape.tree_dump(std::clog, "Shape:", "  ");
+      const geomtools::placement & gPlcmt = gInfo.get_world_placement();
+      std::string plcmtStr;
+      gPlcmt.to_string(plcmtStr, gPlcmt);
+      std::clog << "  -> Placement = " << plcmtStr << '\n';
+    }
+
+    {
+      std::clog << "Source pad #: " << '\n';
+      geomtools::geom_id gId(1131, 0, stripId, padId);
+      std::clog << "  GID = " << gId << '\n';
+      const geomtools::geom_info & gInfo = theMapping.get_geom_infos().find(gId)->second;
+      const geomtools::placement & gPlcmt = gInfo.get_world_placement();
+      const auto & gLog = gInfo.get_logical();
+      const auto & gShape = gLog.get_shape();
+      gShape.tree_dump(std::clog, "Pad:", "  ");
+      std::string plcmtStr;
+      gPlcmt.to_string(plcmtStr, gPlcmt);
+      std::clog << "  -> Placement = " << plcmtStr << '\n';
+    }
+ 
+    for (int sideId = 0; sideId < 2; sideId++) {
+      geomtools::geom_id gId(1132, 0, stripId, padId, sideId);
+      std::clog << "  GID = " << gId << '\n';
+      const geomtools::geom_info & gInfo = theMapping.get_geom_infos().find(gId)->second;
+      const geomtools::placement & gPlcmt = gInfo.get_world_placement();
+      std::string plcmtStr;
+      gPlcmt.to_string(plcmtStr, gPlcmt);
+      std::clog << "  -> Placement = " << plcmtStr << '\n';
+    }
+    
     
   } catch (std::exception & error) {
     DT_LOG_ERROR(logging, error.what());

@@ -1553,6 +1553,8 @@ namespace snrs {
     double theta0 = 0.0 * CLHEP::degree;
     // double thetaRef = std::asin((yRef - ellDist.y0) / ellDist.b);
     // DT_LOG_NOTICE(logging, "thetaRef = " << thetaRef / CLHEP::degree << "°");
+    size_t zConcaveCounter = 0;
+    size_t zConvexCounter = 0;
     for (const auto & zfitContext : _zfits_) {
       int kz = zfitContext.kz;
       const ltd_zband & zBand = _zbands_[kz];
@@ -1586,6 +1588,11 @@ namespace snrs {
       DT_LOG_NOTICE(logging, "  y0=" << ellDist.y0);
       bool concave = false;
       if (ellDist.x0 < 0.0) concave = true;
+      if (concave) {
+        zConcaveCounter++;
+      } else {
+        zConvexCounter++;
+      }
       DT_LOG_NOTICE(logging, "  concave=" << std::boolalpha << concave);
       gsl_function F;
       F.function = fs::elliptic_distortion_data_type::func_elliptic_arc;
@@ -1632,7 +1639,7 @@ namespace snrs {
         double arcRef = datatools::invalid_real();
         int iRef = -1;
         double arcMed = datatools::invalid_real();
-        double yMed = (0.25*ellDist.y0 + 0.75*yRef);
+        double yMed = (0.25 * ellDist.y0 + 0.75 * yRef);
         int iMed = -1;
         double arc_length = 0.0; 
         int icount = 0;
@@ -1795,9 +1802,9 @@ namespace snrs {
         DT_LOG_NOTICE(logging, "    jsy        = " << jsy);
         DT_LOG_NOTICE(logging, "    jstart     @ " << iCurrent);
         double jArcLength = jsy * deltaLength;
-        DT_LOG_NOTICE(logging, "    jArcLength =" << jArcLength / CLHEP::mm << " mm");
+        DT_LOG_NOTICE(logging, "    jArcLength = " << jArcLength / CLHEP::mm << " mm");
         double dArc = arcs1[iCurrent] - arcs1[iFirst];
-        DT_LOG_NOTICE(logging, "    dArc       =" << dArc / CLHEP::mm << " mm");
+        DT_LOG_NOTICE(logging, "    dArc       = " << dArc / CLHEP::mm << " mm");
         while (dArc < jArcLength) {
           if (iCurrent + 1 == arcs1.size()) {
             break;
@@ -1857,20 +1864,28 @@ namespace snrs {
           geomtools::vector_3d f1 = p2 + _fit_config_.safe_film_gap * normalj;
           geomtools::vector_3d f2 = p2 + (pad_.get_film_thickness() + _fit_config_.safe_film_gap) * normalj;
           if (not concave) {
-            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos  = b2;
-            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = b1;
-            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos  = f2;
-            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = f1;
+            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos   = f2;
+            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos  = f1;
+            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos  = b1;
+            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = b2;
           } else {
-            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = b2;
-            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos  = b1;
-            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = f2;
+            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos   = b2;
+            pad_.grab_back_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos  = b1;
             pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_BACK, jy, kz)).pos  = f1;
+            pad_.grab_front_film_vertex(vertex3d_id(pad::FACE_FRONT, jy, kz)).pos = f2;
           }
         } // has film
       } // for
       DT_LOG_NOTICE(logging, "  Elliptic mesh is done." );
     } // end of loop on Z
+    pad::convexity_type overallPadConvexity = pad::CONVEXITY_UNDEF;
+    if (zConcaveCounter == _zfits_.size()) {
+      overallPadConvexity = pad::CONVEXITY_CONCAVE;
+    }
+    if (zConvexCounter == _zfits_.size()) {
+      overallPadConvexity = pad::CONVEXITY_CONVEX;
+    }
+    pad_.set_convexity(overallPadConvexity);
     return;
   }
 

@@ -28,6 +28,7 @@
 int main()
 {
   datatools::logger::priority logging = datatools::logger::PRIO_NOTICE;
+  logging = datatools::logger::PRIO_FATAL;
   try {
     bool draw = true;
     
@@ -40,7 +41,9 @@ int main()
     geoMgr.initialize(geoMgrConfig);
     geoMgr.tree_dump(std::clog, "The geometry manager : ");
 
-    std::string gid_repr("[1131:0.32.0]");
+    int stripId = 32;
+    int padId = 0;
+    std::string gid_repr("[1131:0." + std::to_string(stripId) + "." + std::to_string(padId)+ "]");
     std::istringstream iss(gid_repr);
     geomtools::geom_id padGid;
     iss >> padGid;
@@ -49,6 +52,10 @@ int main()
       = geoMgr.get_mapping().get_geom_infos().find(padGid)->second;
     const geomtools::logical_volume & padLogVol =
       padGeomInfo.get_logical();
+    const geomtools::placement & padWorldPlct
+      = padGeomInfo.get_world_placement();
+    std::clog << "Pad world placement : " << padWorldPlct << '\n';
+    std::clog << "Pad logical volume : " << padLogVol.get_name() << '\n';
     
     std::string vgMgrConfigPath
       = "${SNRS_TESTING_DIR}/config/vg_mgr.conf";
@@ -94,6 +101,7 @@ int main()
     vgMgr.activate_current_vg(vgName1);
     std::size_t vtx_counter = 0;
     std::size_t nshoots = 5000;
+    // nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -115,6 +123,7 @@ int main()
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName2);
     nshoots = 5000;
+    // nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -136,6 +145,7 @@ int main()
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName3);
     nshoots = 5000;
+    //  nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -157,6 +167,7 @@ int main()
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName4);
     nshoots = 5000;
+    // nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -178,6 +189,7 @@ int main()
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName5);
     nshoots = 10000;
+    // nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -198,7 +210,7 @@ int main()
     // Sixth generator:
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName6);
-    nshoots = 10000;
+    // nshoots = 10000;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -220,6 +232,7 @@ int main()
     vtx_counter = 0;
     vgMgr.activate_current_vg(vgName7);
     nshoots = 1000;
+    // nshoots = 0;
     while (vtx_counter < nshoots && vgMgr.can_shoot_vertex()) {
       geomtools::vector_3d vertex;
       vgMgr.shoot_vertex(vertex);
@@ -250,8 +263,9 @@ int main()
       geomtools::placement dd_pl;
       dd_pl.set_translation(0.0, 0.0, 0.0);
       GPD.add_display_data(dd, dd_pl);
-      // GPD.set_view(geomtools::gnuplot_drawer::view_3d());
+      //GPD.set_view(geomtools::gnuplot_drawer::view_3d());
       GPD.set_view(geomtools::gnuplot_drawer::view_2d_yz());
+      //GPD.set_view(geomtools::gnuplot_drawer::view_2d_xy());
       GPD.set_mode(geomtools::gnuplot_drawer::mode_wired());
       int view_code = GPD.draw(geoMgr,
                                visu_object,

@@ -1,4 +1,6 @@
 message(STATUS "Building FSF documentation")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "SNRS_DATA_DIR=${SNRS_DATA_DIR}")
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/snrs-build-fsf.pdf
   COMMAND rm -f ${CMAKE_CURRENT_SOURCE_DIR}/tmpimg

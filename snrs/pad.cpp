@@ -31,9 +31,14 @@ namespace snrs {
     _part_   = INVALID_INDEX;
   }
 
-  void pad::tile_id::set(int32_t side_, int32_t column_, int32_t row_, int32_t part_)
+  void pad::tile_id::set_side(int32_t side_)
   {
     _side_   = side_;
+  }
+
+  void pad::tile_id::set(int32_t side_, int32_t column_, int32_t row_, int32_t part_)
+  {
+    set_side(side_);
     _column_ = column_;
     _row_    = row_;
     _part_   = part_;
@@ -471,6 +476,26 @@ namespace snrs {
     return _original_position_;
   }
 
+  bool pad::has_convexity() const
+  {
+    return _convexity_ != CONVEXITY_UNDEF;
+  }
+  
+  bool pad::is_concave() const
+  {
+    return _convexity_ == CONVEXITY_CONCAVE;
+  }
+  
+  bool pad::is_convex() const
+  {
+    return _convexity_ == CONVEXITY_CONVEX;
+  }
+  
+  void pad::set_convexity(convexity_type c_)
+  {
+    _convexity_ = c_;
+  }
+
   void pad::clear_vertexes()
   {
     for (int i = FACE_BACK; i <= FACE_FRONT; i++) {
@@ -625,6 +650,7 @@ namespace snrs {
     }
     out_ << "|-- Distortion = " << std::boolalpha <<
       (has_distortion()? (std::to_string(_distortion_.z_distortions.size()) + " z-fits") : "none") << '\n';
+    out_ << "|-- Convexity = " << _convexity_ << '\n';
     out_ << "|-- Vertexes = 2 planes of " << _vertexes_[FACE_BACK].size() << " Z-columns of " << (_nz_+1) << " nodes" << '\n';
     for(uint32_t i = FACE_BACK; i < FACE_FRONT; i++) {
       for(uint32_t j = 0; j <= _ny_; j++) {

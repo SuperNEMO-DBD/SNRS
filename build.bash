@@ -35,6 +35,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+exit 0
+
 make
 if [ $? -ne 0 ]; then
     echo >&2 "[error] Make build failed!"

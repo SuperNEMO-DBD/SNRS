@@ -67,11 +67,17 @@ namespace snrs {
 
     const geomtools::box & get_box() const override;
 
+    const geomtools::plain_model & get_source_model() const;
+
+    const geomtools::plain_model & get_back_film_model() const;
+
+    const geomtools::plain_model & get_front_film_model() const;
+
   private:
 
     pad              _pad_;   ///< Reference pad with all useful informations
     geomtools::box   _solid_; ///< Mother box
-    std::string      _material_name_;        ///< Name of the material of the mother volume (gas)
+    std::string      _material_name_;        ///< Name of the material of the mother volume (tracking gas)
     std::string      _source_material_name_; ///< Name of the source material (selenium mixture)
     std::string      _film_material_name_;   ///< Name of the film material (mylar)
     double           _x_shift_ = 0.0;        ///< Placement shift along the X-axis

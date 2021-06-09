@@ -64,9 +64,9 @@ namespace snrs {
     DT_LOG_DEBUG(logging, "yref = " << yref / CLHEP::mm << " mm");
     DT_LOG_DEBUG(logging, "Ny = " << ny);
     DT_LOG_DEBUG(logging, "Nz = " << nz);
-    for (int i = pad::FACE_BACK; i <= pad::FACE_FRONT; i++) {
-      for(uint32_t j = 0; j <= ny; j++) {
-        for(uint32_t k = 0; k <= nz; k++) {
+    for (int i = pad::FACE_BACK; i <= pad::FACE_FRONT; i++) { // X-horizontal
+      for(uint32_t j = 0; j <= ny; j++) { // Y-horizontal
+        for(uint32_t k = 0; k <= nz; k++) { // Z-vertical
           vertex3d_id vid(i, j, k);
           uint32_t vindex = compute_vertex_index(vid);
           const vertex3d * vijk = nullptr;
@@ -114,8 +114,8 @@ namespace snrs {
          *      |        / |
          *      | Up    /  |
          *      | Tile /   |
-         *      |     /    |
-         *      |    /     |
+         *      |     /    |      ->
+         *      |    /     |  (.) n  (normal)
          *      |   / Down |
          *      |  /  Tile |
          *      | /        |
@@ -123,7 +123,7 @@ namespace snrs {
          *      +----------+
          *     Ab          Bb
          */
-        mesh_.solid.add_facet3(facet_idx, bAidx, bCidx, bBidx);
+        mesh_.solid.add_facet3(facet_idx, bAidx, bBidx, bCidx);
         pad::tile_id tid_bd(0, j, k, 0);
         if (mesh_.tile_map.count(tid_bd)) {
           DT_LOG_WARNING(logging, "Back-down tile ID=" << tid_bd << " is already registered in the tile map!")
@@ -132,7 +132,7 @@ namespace snrs {
         mesh_.reverse_tile_map[facet_idx] = tid_bd;
         facet_idx++;
         
-        mesh_.solid.add_facet3(facet_idx, bAidx, bDidx, bCidx);
+        mesh_.solid.add_facet3(facet_idx, bAidx, bCidx, bDidx);
         pad::tile_id tid_bu(0, j, k, 1);
         if (mesh_.tile_map.count(tid_bu)) {
           DT_LOG_WARNING(logging, "Back-up tile ID=" << tid_bu << " is already registered in the tile map!")
@@ -149,8 +149,8 @@ namespace snrs {
          *      |        / |
          *      | Up    /  |
          *      | Tile /   |
-         *      |     /    |
-         *      |    /     |
+         *      |     /    |     ->
+         *      |    /     | (x) n  (normal)
          *      |   / Down |
          *      |  /  Tile |
          *      | /        |
@@ -159,8 +159,8 @@ namespace snrs {
          *     Af          Bf
          *
          */
-        mesh_.solid.add_facet3(facet_idx, fAidx, fBidx, fCidx);
-        pad::tile_id tid_fd(1, j, k, 0);
+        mesh_.solid.add_facet3(facet_idx, fAidx, fCidx, fBidx);
+        pad::tile_id tid_fd(1, j, k, pad::tile_id::PART_DOWN);
         if (mesh_.tile_map.count(tid_fd)) {
           DT_LOG_WARNING(logging, "Front-down tile ID=" << tid_fd << " is already registered in the tile map!")
         }
@@ -168,8 +168,8 @@ namespace snrs {
         mesh_.reverse_tile_map[facet_idx] = tid_fd;
         facet_idx++;
         
-        mesh_.solid.add_facet3(facet_idx, fAidx, fCidx, fDidx);
-        pad::tile_id tid_fu(1, j, k, 1);
+        mesh_.solid.add_facet3(facet_idx, fAidx, fDidx, fCidx);
+        pad::tile_id tid_fu(1, j, k, pad::tile_id::PART_UP);
         if (mesh_.tile_map.count(tid_fu)) {
           DT_LOG_WARNING(logging, "Front-up tile ID=" << tid_fu << " is already registered in the tile map!")
         }
@@ -179,28 +179,28 @@ namespace snrs {
         
         // xz facets (unmapped):
         if (j == 0) {
-          mesh_.solid.add_facet3(facet_idx, bAidx, fAidx, fDidx);
+          mesh_.solid.add_facet3(facet_idx, bAidx, fDidx, fAidx); // Down
           facet_idx++;        
-          mesh_.solid.add_facet3(facet_idx, bAidx, fDidx, bDidx);
+          mesh_.solid.add_facet3(facet_idx, bAidx, bDidx, fDidx); // Up
           facet_idx++;                  
         }
         if (j == ny - 1) {
-          mesh_.solid.add_facet3(facet_idx, bBidx, bCidx, fCidx);
+          mesh_.solid.add_facet3(facet_idx, bBidx, fBidx, fCidx); // Down
           facet_idx++;        
-          mesh_.solid.add_facet3(facet_idx, bBidx, fCidx, fBidx);
+          mesh_.solid.add_facet3(facet_idx, bBidx, fCidx, bCidx); // Up
           facet_idx++;                  
         }
         // xy facets (unmapped):
         if (k == 0) {
-          mesh_.solid.add_facet3(facet_idx, bAidx, bBidx, fBidx);
+          mesh_.solid.add_facet3(facet_idx, bAidx, fBidx, bBidx);
           facet_idx++;        
-          mesh_.solid.add_facet3(facet_idx, bAidx, fBidx, fAidx);
+          mesh_.solid.add_facet3(facet_idx, bAidx, fAidx, fBidx);
           facet_idx++;                  
         }
         if (k == nz - 1) {
-          mesh_.solid.add_facet3(facet_idx, bDidx, fDidx, fCidx);
+          mesh_.solid.add_facet3(facet_idx, bDidx, bCidx, fCidx);
           facet_idx++;        
-          mesh_.solid.add_facet3(facet_idx, bDidx, fCidx, bCidx);
+          mesh_.solid.add_facet3(facet_idx, bDidx, fCidx, fDidx);
           facet_idx++;                  
         }
       }

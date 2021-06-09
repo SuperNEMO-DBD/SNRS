@@ -1,4 +1,6 @@
 message(STATUS "Building LTD documentation")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "SNRS_DATA_DIR=${SNRS_DATA_DIR}")
 
 add_custom_command(OUTPUT snrs-build-ltd.pdf
   # COMMAND test -L ${CMAKE_CURRENT_SOURCE_DIR}/images && rm -f ${CMAKE_CURRENT_SOURCE_DIR}/images

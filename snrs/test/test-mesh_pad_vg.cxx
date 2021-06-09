@@ -42,7 +42,11 @@ int main()
     geoMgr.initialize(geoMgrConfig);
     geoMgr.tree_dump(std::clog, "The geometry manager : ");
 
-    std::string gid_repr("[1131:0.32.0]");
+    int stripId = 34;
+    int padId = 0;
+    std::string gid_repr("[1131:0."
+                         + std::to_string(stripId) + "."
+                         + std::to_string(padId) + "]");
     std::istringstream iss(gid_repr);
     geomtools::geom_id padGid;
     iss >> padGid;
@@ -56,8 +60,11 @@ int main()
     tmp_file.set_remove_at_destroy(false);
     tmp_file.create(".", "snrs-test-mesh_pad_vg_draw_");
     std::ostream & output = tmp_file.out();
-    
-    uint32_t draw_options = geomtools::i_wires_3d_rendering::WR_BASE_GRID; 
+
+    std::cerr << "[DEVEL] WR_BASE_GRID=" << geomtools::i_wires_3d_rendering::WR_BASE_GRID << '\n';
+    std::cerr << "[DEVEL] WR_TESSELLA_ALL_SEGMENTS=" << geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS << '\n';
+    uint32_t draw_options = geomtools::i_wires_3d_rendering::WR_BASE_GRID
+      | geomtools::tessellated_solid::WR_TESSELLA_ALL_SEGMENTS; 
     geomtools::gnuplot_draw::draw_tessellated(output,
                                               padGeomInfo.get_world_placement(),
                                               dynamic_cast<const geomtools::tessellated_solid &>(padLogVol.get_shape()),
@@ -77,7 +84,7 @@ int main()
     meshPadVg.set_geom_manager(geoMgr);
     meshPadVg.initialize_standalone(meshPadVgConfig);
 
-    std::size_t nbvtx = 100000;
+    std::size_t nbvtx = 10000;
     for (std::size_t ivtx = 0; ivtx < nbvtx; ivtx++) {
       geomtools::vector_3d vertex;
       meshPadVg.shoot_vertex(vertex);
@@ -89,9 +96,10 @@ int main()
    if (draw) {
 #if GEOMTOOLS_WITH_GNUPLOT_DISPLAY == 1
       Gnuplot g1;
-      g1.cmd("set title 'SNRS mesh pas vertex generator test' ");
+      g1.cmd("set title 'SNRS mesh pad vertex generator test' ");
       g1.cmd("set view equal xyz");
-      g1.cmd("set xyplane at -1400");
+      g1.cmd("set xyplane at -750");
+      g1.cmd("set zrange [-750:-500]");
       g1.set_xlabel("x").set_ylabel("y").set_zlabel("z");
       {
         std::ostringstream plot_cmd;
