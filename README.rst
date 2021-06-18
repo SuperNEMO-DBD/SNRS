@@ -103,35 +103,39 @@ We assume here a ``bash`` shell.
       ...
    ..
    
-Documentation
+
+Modelling approach
 ========================================
 
 Geometry modelling
 -------------------
 
 SNRS aims  to model the ITEP-style  source foil in SuperNEMO  using 3D
-mesh  (tessellated solid)  in  order to  approximate  the real  curved
-shapes of these  foils at a good level of  approximation, typically at
-millimeter  scales and  at least  below the  resolution of  the vertex
-reconstruction  precision.  The  package thus  provides some  tools to
-describe each source  foil as a 3D mesh made  of hundreds of 3D-tiles,
-each defined by triangular facets with the same effective surface and volumes.
+meshes  (usng *tessellated  solids*  from Bayeux  and compatible  with
+Geant4  geometry modelling  tools) in  order to  approximate the  real
+curved  shapes  of   these  foils  at  a  reasonably   good  level  of
+approximation, typically  at millimeter scale  and at least  below the
+resolution   of   the  particle   tracking   in   Geant4  and   vertex
+reconstruction precision  in Falaise.  The package  thus provides some
+tools to describe  each source foil as  a 3D mesh made  of hundreds of
+3D-tiles, each  defined by triangular  facets with the  same effective
+surface and volumes.
 
 In  the current  release  of  SNRS, each  ITEP-style  source strip  is
 composed of 10 columns and 100  rows, so 1000 individual 3D hexahedron
 tiles  which  are  basically  slightly  deformed  rectangular  cuboid.
 Neglecting the streching effect in the Y and Z direction, each tile is
 considered to be  13.55 mm width and 27 mm  height.  This model allows
-to easily  implement vertex generators  with uniform sampling  both on
-the surface and bulk of the tiles. Finally, each tile has 4 triangular
-facets  :  2  on its  back  face  (Italy)  and  2 on  its  front  face
-(France). The facets which encloses the 3D tile on the other sides are
-not considered  by any algorithm  (but they are implemented  to ensure
-the consistence  of the  structure of  the mesh).  Note also  that the
-model  takes into  account the  Mylar films  which wraps  the selenium
-foils. Both back and front films are thus associated to their own mesh
-models which  are derived from the  main meshed model of  the selenium
-strip.
+to  easily  implement  vertex  generators  with  approximated  uniform
+sampling both on the surface and in bulk of the tiles. Each tile has 4
+master triangular  facets : 2  on its back face  (Italy) and 2  on its
+front face  (France). The facets which  encloses the 3D tile  on the 4
+other  sides  are not  considered  by  the  algorithms (but  they  are
+implemented to ensure the consistence  of the geometrical structure of
+the mesh).   Note also  that the  model takes  into account  the Mylar
+films which wraps  the selenium foils.  Both back and  front films are
+thus associated  to their own mesh  models which are derived  from the
+main meshed model of the selenium strip.
 
 SNRS provides  the ``snrs::mesh_pad_model`` geometry  model (inherited
 from the  Bayeux's ``geomtools::i_boxed_model`` class). Given  a strip
@@ -139,16 +143,17 @@ ID, this class  automatically build the geometry layout  of the strip,
 including the shape of the  enriched selenium foil, the wrapping Mylar
 films and the  material. The parameters of each  ITEP-style source pad
 is  hardcoded in  the ``sngeom::_init_foil_models_()``  method of  the
-sngeom.cpp``  file:  position  of  the  strip  in  the  source  frame,
-dimensions, name of the material (using  the naming scheme in the flat
-realistic modelling of the sources in Falaise).
+``sngeom.cpp``  file:  position of  the  strip  in the  source  frame,
+dimensions, name of the material (using  the same naming scheme in the
+flat realistic modelling of the sources in Falaise).
 
 SNRS  provides  specific dataset  files  for  describing the  deformed
 shapes of  the ITEP-style source  foils and associated  wrapping films
 (see  the   ``resources/data/geometry/source_foils/fsf/``  directory).
-For  convenience,  these datasets  have  been  pre-calculated so  that
-end-users   just  have   to   install  and   use   them  through   the
-``snrs::mesh_pad_model`` geometry model.
+For convenience,  these datasets have been  pre-calculated within SNRS
+(a tricky task reserved for expert/developper users) so that end-users
+just have to install and use them through the ``snrs::mesh_pad_model``
+geometry model.
 
 SNRS                 provides                 also                 the
 ``resources/config/snemo/demonstrator/geometry/GeometryModels/source_module/realistic/strips_itep_like.geom``
@@ -156,30 +161,35 @@ configuration  file  which  contains  the parameters  used  for  each
 ITEP-style  source strip.  This  file  will be  used  by Falaise  to
 integrate a new variant of the geometry layout of the source foils.
 
+All ITEP-stype  source foils  are modelled  but strip  2 of  which the
+deformation is  too complex  (and possibly small  enough) to  be taken
+into account with the current approach.
+
 Vertex generation
 --------------------
 
-SNRS provides  the ``snrs::mesh_pad_vg`` vertex generator class (inherited
-from the  Bayeux's ``geomtools::i_from_model_vg`` class). The set of configuration
-parameters of such a generator object describe:
+SNRS  provides   the  ``snrs::mesh_pad_vg``  vertex   generator  class
+(inherited    from    the   Bayeux's    ``geomtools::i_from_model_vg``
+class). The set of configuration parameters of such a generator object
+describes:
 
 * the *origin* (strip/pad identifier in the source frame)
-* the *mode* (surface or bulk)
-* some  specific selection  informations (side,  set of  tiles in  the
+* the *mode* (*surface* or *bulk*)
+* some optional generated vertex shifting dimensions (expert only)
+* some  optional specific selection  informations (side,  set of  tiles in  the
   mesh)  to  restrict  the  region  of  the  source  foil  for  vertex
   generation.
 
-
-Both vertex generation  modes (*surface* and *bulk*)  are based on
-an approximated  scheme justified by  the very small thickness  of the
+Both vertex  generation modes (*surface*  and *bulk*) are based  on an
+approximated  scheme justified  by  the very  small  thickness of  the
 source foil compared to its other dimensions. With this geometry model
-of the curved source fiols, each triangular facet of a given mesh tile
+of the curved source fiols, each triangular facet in a given mesh tile
 (selenium or Mylar) has  a width of 13.55 mm and height  of 27 mm. The
 thickness of the selenium foil is about 200-300 um and Mylar films are
-12  um thick.  The vertex  generation  algorithm thus  uses a  uniform
+12  um thick.   The vertex  generation algorithm  thus uses  a uniform
 generation sampler  on a reference triangular  surface (available from
-the Bayeux's genvtx module) then skips  the vertex along the normal of
-the facet  by th proper distance,  depending on the mode:
+the Bayeux's ``genvtx`` module) then skips the vertex along the normal
+of the facet by an arbitrary distance, depending on the mode:
 
 - for *surface* generators, this implies  a shift by a few micrometers
   on top of the surface of the considered tile/facet.
@@ -264,7 +274,7 @@ Useful environment variables for development stuff:
    $ bayeux_3_5_0_setup # Or any command that setups Bayeux
    $ cd /path/to/SNRS/source/directory
    $ export RAW_LTD_DATA_DIR="/path/to/SNLTD_3D_measurements"
-   $ bash build.bash
+   $ bash tools/build.bash
    $ cd _build.d
    $ export SNRS_BUILD_DIR=$(pwd)
    $ export SNRS_TESTING_DIR=$(pwd)/../snrs/test
