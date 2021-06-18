@@ -1,5 +1,5 @@
 ==================================================================
-SNRS - SuperNEMO Realistic Sources modeling package
+SNRS - SuperNEMO Realistic Sources modelling package
 ==================================================================
 
 :author: F.Mauger
