@@ -3,7 +3,7 @@ SNRS - SuperNEMO Realistic Sources modelling package
 ==================================================================
 
 :author: F.Mauger
-:date: 2021-05-30
+:date: 2021-06-18
 
 .. image:: doc/slides_2021-05-10/images/test_realistic_foils_setup_3.png
    :width: 40%
@@ -26,8 +26,7 @@ simulation and/or reconstruction datasets is expected.
 Dependencies
 ============
 
-SNRS depends  on Bayeux  3.5.0 and  the GSL  libray for
-direct access to some numerical primitives.
+SNRS depends  on Bayeux  3.5.0 (geometry modelling primitives) and  the GSL  library (numerical primitives).
 
    
 Build and install SNRS
@@ -266,6 +265,30 @@ Directory : ``doc/build-fsf``
 
 Developers' corner
 =======================
+
+Checks
+------
+
+* First release of the 3D mesh for ITEP-style source foils (but 2)
+
+  - positioning of wrapping Mylar films relatively to the selenium strip
+  - convention on the ordering of vertex in triangular facets for 3D-mesh tiles
+  - positioning of the strips within their repective
+    strip paths : no overlap with tracking chamber (confined within X=[-29:+29] mm)
+
+* First release of the vertex generation:
+
+  - surface generator : support back face of the back Mylar film and
+    front face of the front Mylar film
+  - bulk generator in Mylar film (a variant of the above) :
+    support bulk of the back Mylar film and
+    bulk of the front Mylar film
+  - bulk generator in selenium strip
+  - selection of subsets of tiles through ranging or regex
+    
+
+Misc
+----
 
 Useful environment variables for development stuff:
 
