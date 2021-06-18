@@ -273,8 +273,8 @@ Checks
 
   - positioning of wrapping Mylar films relatively to the selenium strip
   - convention on the ordering of vertex in triangular facets for 3D-mesh tiles
-  - positioning of the strips within their repective
-    strip paths : no overlap with tracking chamber (confined within X=[-29:+29] mm)
+  - positioning of the strips within their respective
+    strip paths : ensure no overlap with tracking chamber (confined within X=[-29:+29] mm)
 
 * First release of the vertex generation:
 
@@ -284,7 +284,7 @@ Checks
     support bulk of the back Mylar film and
     bulk of the front Mylar film
   - bulk generator in selenium strip
-  - selection of subsets of tiles through ranging or regex
+  - selection of subsets of tiles through row/column ranging or regex
     
 
 Misc
