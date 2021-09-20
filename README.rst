@@ -42,7 +42,7 @@ We assume here a ``bash`` shell.
       $ bxquery --version
       3.5.0
       $ bxquery --cmakedir
-      /data/sw/BxSoftware/BxInstall/bayeux-3.5.0/lib/cmake/Bayeux-3.5.05
+      /data/sw/BxSoftware/BxInstall/bayeux-3.5.0/lib/cmake/Bayeux-3.5.0
    ..
   
 #. For developpers only: prepare the environment to manage primary and secondary datasets:
