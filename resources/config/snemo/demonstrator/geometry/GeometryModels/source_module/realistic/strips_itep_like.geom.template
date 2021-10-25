@@ -1,0 +1,43 @@
+[name="snemo_strip_@STRIPID@_pad.realistic.model" type="snrs::mesh_pad_model"]
+strip_id : integer = @STRIPID@
+# #@description Safe shift along the X-axis:
+# x_shift : real as length = -1.0 mm
+# #@description Safe shift along the Y-axis:
+# y_shift : real as length = -1.0 mm
+visibility.hidden            : boolean = false
+visibility.color             : string = "green"
+source.visibility.hidden     : boolean = false
+source.visibility.color      : string = "magenta"
+back_film.visibility.hidden  : boolean = true
+back_film.visibility.color   : string = "cyan"
+front_film.visibility.hidden : boolean = true
+front_film.visibility.color  : string = "cyan"
+mapping.daughter_id.back_film   : string = "[source_pad_film:film=0]"
+mapping.daughter_id.source      : string = "[source_pad_bulk]"
+mapping.daughter_id.front_film  : string = "[source_pad_film:film=1]"
+
+
+[name="snemo_strip_@STRIPID@.realistic.model" type="geomtools::simple_shaped_model"]
+shape_type   : string = "box"
+x            : real as length = 58.0 mm
+y            : real as length = 135.5 mm
+z            : real as length = 2700.0 mm
+material.ref : string = "mix_selenium"
+internal_item.labels          : string[1] =  "pad0"
+internal_item.model.pad0      : string = "snemo_strip_@STRIPID@_pad.realistic.model"
+internal_item.placement.pad0  : string = "0 0 0 (mm) "
+mapping.daughter_id.pad0      : string = "[source_pad:pad=0]"
+
+
+[name="snemo_strip_path_@STRIPID@.realistic.model" type="geomtools::simple_shaped_model"]
+shape_type   : string = "box"
+x            : real as length = 58.0 mm
+y            : real as length = 135.5 mm
+z            : real as length = 3000.0 mm
+material.ref : string = "tracking_gas"
+internal_item.labels           : string[1] =  "strip"
+internal_item.model.strip      : string = "snemo_strip_@STRIPID@.realistic.model"
+internal_item.placement.strip  : string = "0 0 0 (mm) "
+mapping.daughter_id.strip      : string = "[source_strip]"
+
+
