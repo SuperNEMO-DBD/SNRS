@@ -3,6 +3,11 @@
 src_dir=$(pwd)
 build_dir="$(pwd)/_build.d"
 install_dir="$(pwd)/_install.d"
+install_dir="/opt/sw/SuperNEMO-DBD/SNRS/install-devel"
+snrs_with_tests=false
+snrs_with_docs=false
+
+snrs_with_tests=true
 
 if [ -d ${build_dir} ]; then
     rm -fr ${build_dir}
@@ -23,11 +28,23 @@ if [ -n "${RAW_LTD_DATA_DIR}" ]; then
    rawLtdOpt=-DRAW_LTD_DATA_DIR="${RAW_LTD_DATA_DIR}" 
 fi
 
+snrs_devel_mode_opt="-DSNRS_DEVELOPER_BUILD=OFF -DSNRS_GENERATE_DATA=OFF"
+snrs_doc_opt="-DSNRS_WITH_DOC=OFF"
+snrs_tests_opt="-DSNRS_ENABLE_TESTING=OFF"
+
+if [ ${snrs_with_tests} = true ]; then
+    snrs_tests_opt="-DSNRS_ENABLE_TESTING=ON"
+fi
+
+if [ ${snrs_with_docs} = true ]; then
+    snrs_doc_opt="-DSNRS_WITH_DOC=ON"
+fi
+
 cmake -DCMAKE_INSTALL_PREFIX=${install_dir} \
       -DBayeux_DIR=$(bxquery --cmakedir) \
-      -DSNRS_DEVELOPER_BUILD=ON \
-      -DSNRS_GENERATE_DATA=ON \
-      -DSNRS_WITH_DOC=ON \
+      ${snrs_devel_mode_opt} \
+      ${snrs_doc_opt} \
+      ${snrs_tests_opt} \
       ${rawLtdOpt} \
     ${src_dir}
 if [ $? -ne 0 ]; then
@@ -35,7 +52,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-exit 0
+# exit 0
 
 make
 if [ $? -ne 0 ]; then

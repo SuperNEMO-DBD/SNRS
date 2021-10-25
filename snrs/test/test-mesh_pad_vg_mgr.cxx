@@ -30,7 +30,7 @@ int main()
   datatools::logger::priority logging = datatools::logger::PRIO_NOTICE;
   logging = datatools::logger::PRIO_FATAL;
   try {
-    bool draw = true;
+    bool draw = false;
     
     std::string geoMgrConfigPath
       = "${SNRS_TESTING_DIR}/config/geometry_manager.conf";

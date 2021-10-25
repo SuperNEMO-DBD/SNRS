@@ -76,8 +76,12 @@ int main()
       std::clog << "  GID = " << gId << '\n';
       const geomtools::geom_info & gInfo = theMapping.get_geom_infos().find(gId)->second;
       const geomtools::placement & gPlcmt = gInfo.get_world_placement();
+      const auto & gLog = gInfo.get_logical();
+      const auto & gShape = gLog.get_shape();
+      gShape.tree_dump(std::clog, "Film:", "  ");
       std::string plcmtStr;
       gPlcmt.to_string(plcmtStr, gPlcmt);
+      std::clog.precision(16);
       std::clog << "  -> Placement = " << plcmtStr << '\n';
     }
     

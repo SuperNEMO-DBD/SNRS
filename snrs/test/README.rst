@@ -13,3 +13,4 @@ From the source directory:
    $ ${SNRS_BUILD_DIR}/snrs/test/snrs-test-mesh_pad_vg
    $ ${SNRS_BUILD_DIR}/snrs/test/snrs-test-mesh_pad_vg_mgr
 ..
+

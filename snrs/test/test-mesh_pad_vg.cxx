@@ -32,6 +32,7 @@ int main(int argc_, char ** argv_)
   datatools::logger::priority logging = datatools::logger::PRIO_NOTICE;
   try {
     bool draw = false;
+    // draw = true;
     int vgVersion=1;
     int stripId = 32;
     int iarg = 1;

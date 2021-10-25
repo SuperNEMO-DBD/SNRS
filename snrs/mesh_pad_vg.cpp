@@ -275,7 +275,7 @@ namespace snrs {
     DT_THROW_IF (! has_geom_manager (), std::logic_error,
                  "Missing geometry manager in vertex generator '" << get_name() << "' !");
     const geomtools::mapping * mapping_ptr
-      = genvtx::detail::access_geometry_mapping(get_geom_manager (), get_mapping_plugin_name());
+      = genvtx::detail::access_geometry_mapping(get_geom_manager(), get_mapping_plugin_name());
     DT_THROW_IF (mapping_ptr == nullptr, std::logic_error,
                  "No available geometry mapping was found in vertex generator '"
                  << get_name() << "' !");
@@ -294,14 +294,18 @@ namespace snrs {
          i != geom_infos.end();
          i++) {
       const geomtools::geom_id & gid = i->first;
+      // XXX DT_LOG_DEBUG(get_logging_priority(), "Physical: key=" << p.first << " vol=" << p.second->get_name());
       if (_get_source_selector().match(gid)) {
         _pimpl_->ginfo = &(i->second);
         _pimpl_->log_vol = &(_pimpl_->ginfo->get_logical());
         _pimpl_->geo_model = &(_pimpl_->log_vol->get_geometry_model());
         // Trick: use the source foil placement as the general placement for any tiles in the tessellated mesh (source or film)
-        // for (auto p : _pimpl_->log_vol->get_physicals()) {
-        //   DT_LOG_DEBUG(get_logging_priority(), "Physical: key=" << p.first << " vol=" << p.second->get_name());
-        // }
+        if (datatools::logger::is_debug(get_logging_priority())) {
+          _pimpl_->log_vol->tree_dump(std::cerr, "log vol geometry model : " + _pimpl_->geo_model->get_name(), "[debug] ");
+          for (auto p : _pimpl_->log_vol->get_physicals()) {
+            DT_LOG_DEBUG(get_logging_priority(), "Physical: key='" << p.first << "' vol='" << p.second->get_name() << "'");
+          }
+        }
         _pimpl_->tessella_placement = _pimpl_->log_vol->get_physical("source.phys").get_placement().get_placement(0);
         found = true;
         break;

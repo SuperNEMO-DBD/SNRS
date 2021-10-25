@@ -55,9 +55,9 @@ if(snrs_generate_tests)
     
   endforeach()
 
-  add_test(NAME snrs-test-geomgr COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/test-geomgr.bash)
-  set_property(TEST snrs-test-geomgr
-    APPEND PROPERTY ENVIRONMENT ${snrs_TEST_ENVIRONMENT}
-    )
+  # add_test(NAME snrs-test-geomgr COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/test-geomgr.bash)
+  # set_property(TEST snrs-test-geomgr
+  #   APPEND PROPERTY ENVIRONMENT ${snrs_TEST_ENVIRONMENT}
+  #   )
   
 endif(snrs_generate_tests)
