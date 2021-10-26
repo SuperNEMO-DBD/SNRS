@@ -57,7 +57,7 @@ List the available vertex generators
    `-- strip_34_pad_0_surface.vg  : (no description)
 ..
    
-.. image: images/snrs_geometry_yz.jpeg
+.. image:: images/snrs_geometry_yz.jpeg
    :width: 75%
 
 ..   
@@ -84,7 +84,7 @@ Generate vertexes on the surface of strip 32
 	  --visu-max-counts 1000                      
 ..
    
-.. image: images/snrs_vertes_strip_32_surface_yz.jpeg
+.. image:: images/snrs_vertes_strip_32_surface_yz.jpeg
    :width: 75%
 
 ..   
@@ -111,7 +111,7 @@ Generate vertexes using a *batman* pattern
 	  --visu-max-counts 1000                      
 ..
    
-.. image: images/snrs_vertes_strip_batman_yz.jpeg
+.. image:: images/snrs_vertes_strip_batman_yz.jpeg
    :width: 75%
 
 ..
