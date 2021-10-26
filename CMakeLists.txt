@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(snrs VERSION 1.0.0)
+project(snrs VERSION 1.1.0)
 message("PROJECT_VERSION=${PROJECT_VERSION}")
 
 find_package(Bayeux 3.5 REQUIRED)
