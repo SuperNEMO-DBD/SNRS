@@ -77,7 +77,7 @@ endif()
 if (snrs_generate_data)
   message(STATUS "====================================================")
   message(STATUS "=                                                  =")
-  message(STATUS "=  Genrating data...                               =")
+  message(STATUS "=  Generating data...                              =")
   message(STATUS "=                                                  =")
   message(STATUS "====================================================")
 endif(snrs_generate_data)
@@ -85,7 +85,7 @@ endif(snrs_generate_data)
 if (snrs_generate_data_with_plots)
   message(STATUS "====================================================")
   message(STATUS "=                                                  =")
-  message(STATUS "=  Genrating data with plots...                    =")
+  message(STATUS "=  Generating data with plots...                   =")
   message(STATUS "=                                                  =")
   message(STATUS "====================================================")
 endif(snrs_generate_data_with_plots)
@@ -155,12 +155,12 @@ if(UNIX AND NOT APPLE)
   set_target_properties(snrs
     PROPERTIES INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
     )
-endif()
+endif() 
 
 install(FILES
   ${PROJECT_BINARY_DIR}/snrs/config.hpp
   ${snrs_HEADERS}
-  TYPE INCLUDE
+  DESTINATION include/snrs
   )
 
 ###########################################

@@ -28,7 +28,7 @@ namespace snrs {
                                                                   SNRS_RESOURCE_PATH);
       libInfoData.store(datatools::library_info::keys::env_resource_dir(),
                         "SNRS_RESOURCE_PATH");
-      libInfoData.store("truc", "foo");
+      // libInfoData.store("truc", "foo");
       // std::cerr << "Library info :\n";
       // libInfoData.print_tree(std::cerr);
     }
