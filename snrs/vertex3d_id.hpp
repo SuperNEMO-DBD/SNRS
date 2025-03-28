@@ -4,6 +4,7 @@
 // Standard Library:
 #include <iostream>
 #include <limits>
+#include <cstdint>
 
 namespace snrs {
   

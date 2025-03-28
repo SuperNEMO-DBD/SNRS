@@ -148,7 +148,9 @@ namespace snrs {
       DT_LOG_NOTICE(logging, "Requested pad ID=" << pad_id << " and pad ID="  << _pad_.get_pad_id() << " from file do not match!");
     }
     DT_LOG_NOTICE(logging, "Pad :");
-    _pad_.print(std::clog);
+    if (datatools::logger::is_notice(logging)) {
+      _pad_.print(std::clog);
+    }
     DT_THROW_IF(not _pad_.has_distortion(),
                 std::logic_error,
                 "This pad has no distortion and is not eligible to this model!");

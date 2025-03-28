@@ -3,7 +3,7 @@
 src_dir=$(pwd)
 build_dir="$(pwd)/_build.d"
 install_dir="$(pwd)/_install.d"
-install_dir="/opt/sw/SuperNEMO-DBD/SNRS/install-devel"
+install_dir="/opt/SW/SuperNEMO-DBD/SNRS/install-devel"
 snrs_with_tests=false
 snrs_with_docs=false
 
@@ -17,7 +17,7 @@ mkdir -p ${build_dir}
 cd ${build_dir}
 
 if [ -z ${BX_BAYEUX_INSTALL_DIR} ]; then
-    bayeux_3_5_0_setup
+    bayeux_pro_setup
 fi
 
 # Example:
